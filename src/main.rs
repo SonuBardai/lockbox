@@ -1,65 +1,8 @@
-use clap::{builder::PossibleValue, Parser, ValueEnum};
-
-#[derive(Parser, Debug)]
-#[clap(name = "lockbox", about = "A password manager and generator")]
-struct Args {
-    #[clap(subcommand)]
-    command: Command,
-}
-
-#[derive(Debug, Clone, Parser)]
-enum Length {
-    Eight,
-    Sixteen,
-    ThirtyTwo,
-}
-
-impl ValueEnum for Length {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[Length::Eight, Length::Sixteen, Length::ThirtyTwo]
-    }
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        match self {
-            Length::Eight => Some(PossibleValue::new("8")),
-            Length::Sixteen => Some(PossibleValue::new("16")),
-            Length::ThirtyTwo => Some(PossibleValue::new("32")),
-        }
-    }
-}
-
-#[derive(Parser, Debug)]
-enum Command {
-    Add {
-        #[clap(short, long)]
-        service: String,
-        #[clap(short, long)]
-        username: String,
-        #[clap(short, long)]
-        password: String,
-    },
-    Generate {
-        #[clap(short, long)]
-        length: Length,
-        #[clap(short, long)]
-        symbols: bool,
-    },
-    List,
-    Remove {
-        #[clap(short, long)]
-        service: String,
-        #[clap(short, long)]
-        username: String,
-    },
-    Show {
-        #[clap(short, long)]
-        service: String,
-        #[clap(short, long)]
-        username: String,
-    },
-}
+use lockbox::cli::{build_parser, Command};
+use passwords::PasswordGenerator;
 
 fn main() {
-    let args = Args::parse();
+    let args = build_parser();
     match args.command {
         Command::Add {
             service,
@@ -72,9 +15,36 @@ fn main() {
                 service, username, password
             );
         }
-        Command::Generate { length, symbols } => {
-            println!("Generate operation.");
-            println!("Length: {:?}, Symbols: {}", length, symbols);
+        Command::Generate {
+            length,
+            symbols,
+            uppercase,
+            lowercase,
+            numbers,
+            count,
+        } => {
+            let pg = PasswordGenerator::new()
+                .length(length.get_val())
+                .lowercase_letters(lowercase)
+                .uppercase_letters(uppercase)
+                .numbers(numbers)
+                .symbols(symbols)
+                .strict(true);
+            if count > 1 {
+                match pg.generate(count) {
+                    Ok(passwords) => {
+                        for password in passwords {
+                            println!("{}", password)
+                        }
+                    }
+                    Err(err) => println!("Error generating password: {}", err),
+                }
+            } else {
+                match pg.generate_one() {
+                    Ok(password) => println!("{}", password),
+                    Err(err) => println!("Error generating password: {}", err),
+                }
+            }
         }
         Command::List => {
             println!("List operation.");
