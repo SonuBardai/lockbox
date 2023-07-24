@@ -55,7 +55,7 @@ pub enum Command {
     Add {
         #[clap(short, long)]
         service: String,
-        #[clap(short, long)]
+        #[clap(short, long, aliases=&["user"])]
         username: Option<String>,
         #[clap(short, long)]
         master: String,
@@ -80,17 +80,22 @@ pub enum Command {
         #[clap(short, long, default_value_t = 1)]
         count: usize,
     },
-    List,
+    List {
+        #[clap(short, long)]
+        master: String,
+    },
     Remove {
         #[clap(short, long)]
         service: String,
+        #[clap(short, long, aliases=&["user"])]
+        username: Option<String>,
         #[clap(short, long)]
-        username: String,
+        master: String,
     },
     Show {
         #[clap(short, long)]
         service: String,
-        #[clap(short, long)]
+        #[clap(short, long, aliases=&["user"])]
         username: Option<String>,
         #[clap(short, long)]
         master: String,
