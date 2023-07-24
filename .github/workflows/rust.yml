@@ -1,12 +1,6 @@
 name: Rust
 
-on:
-  push:
-    branches:
-      - main
-  pull_requests:
-    branches:
-      - main
+on: [push, pull_request]
 
 jobs:
   server_build:
