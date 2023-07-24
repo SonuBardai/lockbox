@@ -1,0 +1,42 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - main
+  pull_requests:
+    branches:
+      - main
+
+jobs:
+  server_build:
+    strategy:
+      matrix:
+        toolchain: [stable, beta, nightly]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Update rustup
+        run: rustup update
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+          override: true
+
+      - name: Build
+        working-directory: server
+        run: cargo build --verbose
+
+      - name: Check formatting
+        working-directory: server
+        run: cargo fmt -- --check
+
+      - name: Run linter
+        working-directory: server
+        run: cargo clippy -- -D warnings
