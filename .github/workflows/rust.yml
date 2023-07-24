@@ -24,13 +24,13 @@ jobs:
           override: true
 
       - name: Build
-        working-directory: server
+        working-directory: .
         run: cargo build --verbose
 
       - name: Check formatting
-        working-directory: server
+        working-directory: .
         run: cargo fmt -- --check
 
       - name: Run linter
-        working-directory: server
+        working-directory: .
         run: cargo clippy -- -D warnings
