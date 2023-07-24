@@ -56,7 +56,9 @@ pub enum Command {
         #[clap(short, long)]
         service: String,
         #[clap(short, long)]
-        username: String,
+        username: Option<String>,
+        #[clap(short, long)]
+        master: String,
         #[clap(short, long)]
         password: String,
     },
@@ -89,7 +91,9 @@ pub enum Command {
         #[clap(short, long)]
         service: String,
         #[clap(short, long)]
-        username: String,
+        username: Option<String>,
+        #[clap(short, long)]
+        master: String,
     },
 }
 
