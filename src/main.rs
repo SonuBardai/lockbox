@@ -25,7 +25,7 @@ fn derive_encryption_key(master_password: String, salt: &[u8]) -> [u8; 32] {
         pbkdf2::PBKDF2_HMAC_SHA256,
         NonZeroU32::new(100_000).unwrap(),
         salt,
-        &master_password.as_bytes(),
+        master_password.as_bytes(),
         &mut enc_key,
     );
     enc_key
@@ -194,7 +194,7 @@ fn main() {
         } => {
             initialize_password_file(DEFAULT_PASSWORD_FILE_NAME, master.clone())
                 .expect("Failed to initialize passwords store");
-            let passwords = load_passwords(DEFAULT_PASSWORD_FILE_NAME, master.clone())
+            let passwords = load_passwords(DEFAULT_PASSWORD_FILE_NAME, master)
                 .expect("Failed to read passwords store");
             if let Some(password) = passwords.find(&service, username.clone()) {
                 println!("Password: {}", password.password);
