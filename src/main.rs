@@ -1,49 +1,13 @@
-use std::{num::NonZeroU32, path::Path};
-
-use aes_gcm::{
-    aead::{generic_array::GenericArray, Aead, OsRng},
-    AeadCore, Aes256Gcm, KeyInit,
+use aes_gcm::aead::Aead;
+use lockbox::{
+    cli::{build_parser, Command},
+    crypto::{encrypt_contents, get_cipher, get_random_salt},
+    pass::{PasswordEntry, Passwords},
 };
-use lockbox::cli::{build_parser, Command};
 use passwords::PasswordGenerator;
-use ring::rand::SystemRandom;
-use ring::{pbkdf2, rand::SecureRandom};
-use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
-
-fn get_random_salt() -> [u8; 16] {
-    let mut salt = [0u8; 16];
-    let r = SystemRandom::new();
-    r.fill(&mut salt).unwrap();
-    salt
-}
-
-fn derive_encryption_key(master_password: String, salt: &[u8]) -> [u8; 32] {
-    let mut enc_key: [u8; 32] = [0u8; 32];
-    pbkdf2::derive(
-        pbkdf2::PBKDF2_HMAC_SHA256,
-        NonZeroU32::new(100_000).unwrap(),
-        salt,
-        master_password.as_bytes(),
-        &mut enc_key,
-    );
-    enc_key
-}
-
-fn get_cipher(master_password: String, salt: &[u8]) -> Aes256Gcm {
-    let enc_key = derive_encryption_key(master_password, salt);
-    let cipher = Aes256Gcm::new(GenericArray::from_slice(&enc_key));
-    cipher
-}
-
-fn encrypt_contents(contents: &str, master_password: String, salt: &[u8]) -> (Vec<u8>, Vec<u8>) {
-    let cipher = get_cipher(master_password, salt);
-    let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-    println!("Nonce generated: {:?}", nonce);
-    let encrypted_text = cipher.encrypt(&nonce, contents.as_ref());
-    (encrypted_text.unwrap(), nonce.to_vec())
-}
 
 fn initialize_password_file(file_name: &str, master_password: String) -> Result<(), anyhow::Error> {
     let password_json = Path::new(DEFAULT_PASSWORD_FILE_NAME);
@@ -59,42 +23,6 @@ fn initialize_password_file(file_name: &str, master_password: String) -> Result<
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct PasswordEntry {
-    service: String,
-    username: Option<String>,
-    password: String,
-}
-
-impl PasswordEntry {
-    pub fn new(service: String, username: Option<String>, password: String) -> PasswordEntry {
-        PasswordEntry {
-            service,
-            username,
-            password,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Passwords(Vec<PasswordEntry>);
-
-impl Passwords {
-    pub fn append(&mut self, new_password: PasswordEntry) {
-        self.0.push(new_password);
-    }
-    pub fn find(&self, service: &str, username: Option<String>) -> Option<&PasswordEntry> {
-        self.0
-            .iter()
-            .find(|pwd| pwd.service == service && pwd.username == username)
-    }
-}
-
-fn parse_passwords(raw_passwords: &str) -> Result<Passwords, anyhow::Error> {
-    let passwords: Passwords = serde_json::from_str(raw_passwords)?;
-    Ok(passwords)
-}
-
 fn load_passwords(file_name: &str, master_password: String) -> Result<Passwords, anyhow::Error> {
     let encrypted_file = std::fs::read(file_name)?;
     let salt = &encrypted_file[..16];
@@ -105,8 +33,8 @@ fn load_passwords(file_name: &str, master_password: String) -> Result<Passwords,
         .decrypt(nonce.into(), encrypted_data.as_ref())
         .expect("Failed to decrypt data");
     let plain_text_str = String::from_utf8(plain_text)?;
-    println!("Plain text: {}", plain_text_str);
-    let parsed_passwords = parse_passwords(&plain_text_str)?;
+    // println!("Plain text: {}", plain_text_str);
+    let parsed_passwords = Passwords::parse_passwords(&plain_text_str)?;
     Ok(parsed_passwords)
 }
 
@@ -143,7 +71,7 @@ fn main() {
                 .expect("Failed to initialize passwords store");
             let mut passwords = load_passwords(DEFAULT_PASSWORD_FILE_NAME, master.clone())
                 .expect("Failed to read passwords store");
-            println!("Password: {:?}", passwords);
+            // println!("Password: {:?}", passwords);
             let new_password = PasswordEntry::new(service, username, password);
             passwords.append(new_password);
             store_passwords(DEFAULT_PASSWORD_FILE_NAME, master, passwords)
@@ -197,7 +125,7 @@ fn main() {
             let passwords = load_passwords(DEFAULT_PASSWORD_FILE_NAME, master)
                 .expect("Failed to read passwords store");
             if let Some(password) = passwords.find(&service, username.clone()) {
-                println!("Password: {}", password.password);
+                password.print_password();
             } else {
                 print!("Cannot find the given service {}", service);
                 if let Some(u) = username {
