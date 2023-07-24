@@ -3,7 +3,7 @@ name: Rust
 on: [push, pull_request]
 
 jobs:
-  server_build:
+  build:
     strategy:
       matrix:
         toolchain: [stable, beta, nightly]
