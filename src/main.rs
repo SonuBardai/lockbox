@@ -1,5 +1,6 @@
-use lockbox::cli::{build_args, Command};
+use clap::Parser;
+use lockbox::{cli::args::Args, cli::Command};
 
 fn main() {
-    Command::map(build_args())
+    Command::map(Args::parse())
 }

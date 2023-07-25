@@ -89,7 +89,3 @@ impl Command {
         }
     }
 }
-
-pub fn build_args() -> Args {
-    Args::parse()
-}
