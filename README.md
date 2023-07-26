@@ -1,21 +1,34 @@
-# LockBox
+# Lockbox
+<img src=".github/assets/lockbox-1.jpg" alt="Rust Password Manager Logo" width="100%">
 
-### Password store
+
+Lockbox is a command-line tool for generating and managing passwords. It uses strong encryption algorithms to securely store your passwords, so you can be sure that your data is safe.
+
+### Usage
+To use Rust Password Manager, first make sure you have Rust installed on your system. Then, clone this repository and run cargo build to build the project.
+
+Once you’ve built the project, you can run it using cargo run. Here’s an overview of the available commands:
+
 ```
-+----------------+         +----------------+
-| Master Password | -----> |  KDF (PBKDF2)  | --> Encryption Key
-+----------------+         +----------------+
-                                |
-                                v
-+--------------------+     +---------+
-| Plaintext Password | --> | AES-GCM | --> Encrypted Password
-+--------------------+     +---------+
-                                |
-                                v
-                            +---------+
-                            | Storage |
-                            +---------+
+A password manager and generator
+
+Usage: lockbox <COMMAND>
+
+Commands:
+  add       
+  generate  Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]
+  list      
+  remove    
+  show      
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
 ```
-1. Derive encryption key from master password: The first step is to derive an encryption key from the master password provided by the user. This is done using a key derivation function (KDF). We're using PBKDF2.
-2. Encrypt plaintext password: Once the encryption key has been derived, it can be used to encrypt the plaintext password using the AES-GCM encryption algorithm. AES-GCM is a symmetric encryption algorithm, which means that the same key is used for both encryption and decryption. The algorithm takes the plaintext password, the encryption key, and other parameters such as a nonce or initialization vector (IV) as input and produces the encrypted password as output. 
-3. Store encrypted password: The encrypted password can then be stored in a file.
+For example, to generate a new password with default properties, you can run cargo run -- generate.
+
+### Contributing
+Contributions are welcome! If you’d like to contribute, please feel free to open an issue or submit a pull request.
+
+### License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
