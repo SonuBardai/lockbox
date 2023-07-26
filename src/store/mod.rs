@@ -45,7 +45,7 @@ impl PasswordStore {
         // println!("Plain text: {}", plain_text_str);
         let parsed_passwords = Passwords::parse_passwords(&plain_text_str)?;
         self.passwords = Some(parsed_passwords);
-        return Ok(self);
+        Ok(self)
     }
 
     pub fn store_passwords(self) -> anyhow::Result<Self> {
