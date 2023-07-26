@@ -27,6 +27,9 @@ Options:
 ```
 For example, to generate a new password with default properties, you can run cargo run -- generate.
 
+### Working
+[Store](./src/store/README.md)
+
 ### Contributing
 Contributions are welcome! If you’d like to contribute, please feel free to open an issue or submit a pull request.
 
