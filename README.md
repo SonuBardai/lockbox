@@ -1,5 +1,5 @@
 # Lockbox
-<img src=".github/assets/lockbox-1.jpg" alt="Rust Password Manager Logo" width="100%">
+<img src="https://i.imgur.com/ZV550bh.jpg" alt="Rust Password Manager Logo" width="100%">
 
 
 Lockbox is a command-line tool for generating and managing passwords. It uses strong encryption algorithms to securely store your passwords, so you can be sure that your data is safe.
