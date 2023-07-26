@@ -15,7 +15,7 @@ pub fn get_random_salt() -> [u8; 16] {
     salt
 }
 
-pub fn derive_encryption_key(master_password: String, salt: &[u8]) -> [u8; 32] {
+pub fn derive_encryption_key(master_password: &str, salt: &[u8]) -> [u8; 32] {
     let mut enc_key: [u8; 32] = [0u8; 32];
     pbkdf2::derive(
         pbkdf2::PBKDF2_HMAC_SHA256,
@@ -27,17 +27,13 @@ pub fn derive_encryption_key(master_password: String, salt: &[u8]) -> [u8; 32] {
     enc_key
 }
 
-pub fn get_cipher(master_password: String, salt: &[u8]) -> Aes256Gcm {
+pub fn get_cipher(master_password: &str, salt: &[u8]) -> Aes256Gcm {
     let enc_key = derive_encryption_key(master_password, salt);
     let cipher = Aes256Gcm::new(GenericArray::from_slice(&enc_key));
     cipher
 }
 
-pub fn encrypt_contents(
-    contents: &str,
-    master_password: String,
-    salt: &[u8],
-) -> (Vec<u8>, Vec<u8>) {
+pub fn encrypt_contents(contents: &str, master_password: &str, salt: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let cipher = get_cipher(master_password, salt);
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
     println!("Nonce generated: {:?}", nonce);

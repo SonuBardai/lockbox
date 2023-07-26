@@ -27,17 +27,20 @@ impl Passwords {
     pub fn append(&mut self, new_password: PasswordEntry) {
         self.0.push(new_password);
     }
-    pub fn find(&self, service: &str, username: Option<String>) -> Option<&PasswordEntry> {
+    pub fn find(&self, service: String, username: Option<String>) -> Option<&PasswordEntry> {
         self.0
             .iter()
             .find(|pwd| pwd.service == service && pwd.username == username)
     }
-    pub fn remove(&mut self, service: &str, username: Option<String>) -> bool {
+    pub fn remove(&mut self, service: String, username: Option<String>) -> Option<PasswordEntry> {
+        if let Some(index) = self
+            .0
+            .iter()
+            .position(|pwd| pwd.service == service && pwd.username == username)
         {
-            let initial_len = self.0.len();
-            self.0
-                .retain(|pwd| !(pwd.service == service && pwd.username == username));
-            initial_len != self.0.len()
+            Some(self.0.remove(index))
+        } else {
+            None
         }
     }
     pub fn parse_passwords(raw_passwords: &str) -> Result<Passwords, anyhow::Error> {

@@ -14,9 +14,9 @@ pub enum Command {
         #[clap(short, long, aliases=&["user"])]
         username: Option<String>,
         #[clap(short, long)]
-        master: String,
-        #[clap(short, long)]
         password: String,
+        #[clap(short, long)]
+        master: String,
     },
     #[clap(
         about = "Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]",
@@ -64,9 +64,9 @@ impl Command {
             Command::Add {
                 service,
                 username,
-                master,
                 password,
-            } => add_password(service, username, master, password),
+                master,
+            } => add_password(service, username, master, password).expect("Failed to add password"),
             Command::Generate {
                 length,
                 symbols,
@@ -75,17 +75,17 @@ impl Command {
                 numbers,
                 count,
             } => generate_password(length, symbols, uppercase, lowercase, numbers, count),
-            Command::List { master } => list_passwords(master),
+            Command::List { master } => list_passwords(master).expect("Failed to get passwords"),
             Command::Remove {
                 service,
                 username,
                 master,
-            } => remove_password(service, username, master),
+            } => remove_password(service, username, master).expect("Failed to remove password"),
             Command::Show {
                 service,
                 username,
                 master,
-            } => show_password(service, username, master),
+            } => show_password(service, username, master).expect("Failed to get passwords"),
         }
     }
 }
