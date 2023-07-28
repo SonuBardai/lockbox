@@ -4,6 +4,8 @@ use crate::cli::{
 };
 use clap::Parser;
 
+use super::actions::get_random_password;
+
 #[derive(Parser, Debug)]
 pub enum Command {
     Add {
@@ -82,10 +84,16 @@ impl Command {
                 uppercase,
                 lowercase,
                 numbers,
-            } => add_password(
-                service, username, master, password, generate, length, symbols, uppercase,
-                lowercase, numbers,
-            )
+            } => {
+                let password = if generate {
+                    Some(get_random_password(
+                        length, symbols, uppercase, lowercase, numbers,
+                    ))
+                } else {
+                    password
+                };
+                add_password(service, username, master, password)
+            }
             .expect("Failed to add password"),
             Command::Generate {
                 length,

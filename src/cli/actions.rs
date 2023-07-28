@@ -9,25 +9,11 @@ const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
 pub fn add_password(
     service: String,
     username: Option<String>,
-    password: Option<String>,
     master: Option<String>,
-    generate: bool,
-    length: Length,
-    symbols: bool,
-    uppercase: bool,
-    lowercase: bool,
-    numbers: bool,
+    password: Option<String>,
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
-    let password = if !generate {
-        if let Some(password) = password {
-            password
-        } else {
-            read_input("password")
-        }
-    } else {
-        get_random_password(length, symbols, uppercase, lowercase, numbers)
-    };
+    let password = password.unwrap_or_else(|| read_input("password"));
     PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME, master)?
         .load_passwords()?
         .add_password(service, username, password)?
