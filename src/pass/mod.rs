@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PasswordEntry {
-    service: String,
-    username: Option<String>,
+    pub service: String,
+    pub username: Option<String>,
     password: String,
 }
 

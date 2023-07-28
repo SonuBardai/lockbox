@@ -36,7 +36,6 @@ pub fn get_cipher(master_password: &str, salt: &[u8]) -> Aes256Gcm {
 pub fn encrypt_contents(contents: &str, master_password: &str, salt: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let cipher = get_cipher(master_password, salt);
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-    println!("Nonce generated: {:?}", nonce);
     let encrypted_text = cipher.encrypt(&nonce, contents.as_ref());
     (encrypted_text.unwrap(), nonce.to_vec())
 }
