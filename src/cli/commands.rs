@@ -1,4 +1,7 @@
-use crate::{cli::Length, store::PasswordStore};
+use crate::{
+    cli::{io::read_input, Length},
+    store::PasswordStore,
+};
 use passwords::PasswordGenerator;
 
 const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
@@ -6,13 +9,48 @@ const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
 pub fn add_password(
     service: String,
     username: Option<String>,
-    password: String,
-    master: String,
+    password: Option<String>,
+    master: Option<String>,
+    generate: bool,
+    length: Length,
+    symbols: bool,
+    uppercase: bool,
+    lowercase: bool,
+    numbers: bool,
 ) -> anyhow::Result<()> {
+    let master = master.unwrap_or_else(|| read_input("master password"));
+    let password = if !generate {
+        if let Some(password) = password {
+            password
+        } else {
+            read_input("password")
+        }
+    } else {
+        get_random_password(length, symbols, uppercase, lowercase, numbers)
+    };
     PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME, master)?
         .load_passwords()?
-        .add_password(service, username, password)?;
+        .add_password(service, username, password)?
+        .store_passwords()?;
     Ok(())
+}
+
+pub fn get_random_password(
+    length: Length,
+    symbols: bool,
+    uppercase: bool,
+    lowercase: bool,
+    numbers: bool,
+) -> String {
+    PasswordGenerator::new()
+        .length(length.get_val())
+        .lowercase_letters(lowercase)
+        .uppercase_letters(uppercase)
+        .numbers(numbers)
+        .symbols(symbols)
+        .strict(true)
+        .generate_one()
+        .unwrap()
 }
 
 pub fn generate_password(
@@ -50,15 +88,17 @@ pub fn generate_password(
 pub fn show_password(
     service: String,
     username: Option<String>,
-    master: String,
+    master: Option<String>,
 ) -> anyhow::Result<()> {
+    let master = master.unwrap_or_else(|| read_input("master password"));
     let passwords = PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME, master)?.load_passwords()?;
     let password = passwords.find_password(service, username);
     println!("Password: {:?}", password);
     Ok(())
 }
 
-pub fn list_passwords(master: String) -> anyhow::Result<()> {
+pub fn list_passwords(master: Option<String>) -> anyhow::Result<()> {
+    let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME, master)?
         .load_passwords()?
         .list_passwords();
@@ -68,8 +108,9 @@ pub fn list_passwords(master: String) -> anyhow::Result<()> {
 pub fn remove_password(
     service: String,
     username: Option<String>,
-    master: String,
+    master: Option<String>,
 ) -> anyhow::Result<()> {
+    let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME, master)?
         .load_passwords()?
         .remove_password(service, username)
