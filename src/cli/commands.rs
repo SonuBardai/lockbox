@@ -105,7 +105,10 @@ impl Command {
                 numbers,
                 count,
             } => generate_password(length, symbols, uppercase, lowercase, numbers, count),
-            Command::List { master, show_passwords } => list_passwords(master, show_passwords).expect("Failed to get passwords"),
+            Command::List {
+                master,
+                show_passwords,
+            } => list_passwords(master, show_passwords).expect("Failed to get passwords"),
             Command::Remove {
                 service,
                 username,
