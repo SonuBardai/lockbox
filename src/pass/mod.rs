@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct PasswordEntry {
     service: String,
     username: Option<String>,
@@ -20,10 +20,19 @@ impl PasswordEntry {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Passwords(Vec<PasswordEntry>);
 
+impl Default for Passwords {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Passwords {
+    pub fn new() -> Self {
+        Passwords(vec![])
+    }
     pub fn append(&mut self, new_password: PasswordEntry) {
         self.0.push(new_password);
     }
@@ -58,12 +67,10 @@ impl Passwords {
                 } else {
                     println!("Service: {}, Password: {}", pwd.service, pwd.password)
                 }
+            } else if let Some(username) = &pwd.username {
+                println!("Service: {}, Username: {}", pwd.service, username)
             } else {
-                if let Some(username) = &pwd.username {
-                    println!("Service: {}, Username: {}", pwd.service, username)
-                } else {
-                    println!("Service: {}", pwd.service)
-                }
+                println!("Service: {}", pwd.service)
             }
         })
     }

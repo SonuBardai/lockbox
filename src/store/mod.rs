@@ -110,3 +110,37 @@ impl PasswordStore {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    const TEST_FILE_NAME: &str = "test_passwords";
+    const TEST_MASTER_PASSWORD: &str = "test_master";
+
+    #[test]
+    fn test_new_password_store() {
+        let store = PasswordStore::new(TEST_FILE_NAME, TEST_MASTER_PASSWORD.to_string()).unwrap();
+        assert_eq!(store.file_name, TEST_FILE_NAME);
+        assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
+        assert!(store.passwords.is_none());
+        assert!(Path::new(TEST_FILE_NAME).exists());
+        cleanup();
+    }
+
+    #[test]
+    fn test_load_passwords() {
+        let store = PasswordStore::new(TEST_FILE_NAME, TEST_MASTER_PASSWORD.to_string())
+            .unwrap()
+            .load_passwords()
+            .unwrap();
+        assert!(store.passwords.is_some());
+        let expected_passwords = Passwords::new();
+        assert_eq!(store.passwords.unwrap(), expected_passwords);
+        cleanup();
+    }
+
+    fn cleanup() {
+        fs::remove_file(TEST_FILE_NAME).unwrap();
+    }
+}
