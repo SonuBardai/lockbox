@@ -47,16 +47,23 @@ impl Passwords {
         let passwords: Passwords = serde_json::from_str(raw_passwords)?;
         Ok(passwords)
     }
-    pub fn print_all(&self) {
-        // println!("{:?}", self.0);
+    pub fn print_all(&self, show_passwords: bool) {
         self.0.iter().for_each(|pwd| {
-            if let Some(username) = &pwd.username {
-                println!(
-                    "Service: {}, Username: {}, Password: {}",
-                    pwd.service, username, pwd.password
-                )
+            if show_passwords {
+                if let Some(username) = &pwd.username {
+                    println!(
+                        "Service: {}, Username: {}, Password: {}",
+                        pwd.service, username, pwd.password
+                    )
+                } else {
+                    println!("Service: {}, Password: {}", pwd.service, pwd.password)
+                }
             } else {
-                println!("Service: {}, Password: {}", pwd.service, pwd.password)
+                if let Some(username) = &pwd.username {
+                    println!("Service: {}, Username: {}", pwd.service, username)
+                } else {
+                    println!("Service: {}", pwd.service)
+                }
             }
         })
     }

@@ -83,11 +83,11 @@ pub fn show_password(
     Ok(())
 }
 
-pub fn list_passwords(master: Option<String>) -> anyhow::Result<()> {
+pub fn list_passwords(master: Option<String>, show_passwords: bool) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME, master)?
         .load_passwords()?
-        .list_passwords();
+        .list_passwords(show_passwords);
     Ok(())
 }
 

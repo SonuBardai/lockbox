@@ -51,6 +51,8 @@ pub enum Command {
     List {
         #[clap(short, long)]
         master: Option<String>,
+        #[clap(short, long, default_value_t = false, aliases=&["show", "show-passwords", "reveal"])]
+        show_passwords: bool,
     },
     Remove {
         #[clap(short, long)]
@@ -103,7 +105,7 @@ impl Command {
                 numbers,
                 count,
             } => generate_password(length, symbols, uppercase, lowercase, numbers, count),
-            Command::List { master } => list_passwords(master).expect("Failed to get passwords"),
+            Command::List { master, show_passwords } => list_passwords(master, show_passwords).expect("Failed to get passwords"),
             Command::Remove {
                 service,
                 username,
