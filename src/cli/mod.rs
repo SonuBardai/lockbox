@@ -1,5 +1,6 @@
 pub mod args;
 pub mod commands;
+pub mod io;
 use crate::cli::{
     args::{Args, Length},
     commands::{add_password, generate_password, list_passwords, remove_password, show_password},
@@ -14,9 +15,21 @@ pub enum Command {
         #[clap(short, long, aliases=&["user"])]
         username: Option<String>,
         #[clap(short, long)]
-        password: String,
+        password: Option<String>,
         #[clap(short, long)]
-        master: String,
+        master: Option<String>,
+        #[clap(short, long, default_value_t = false)]
+        generate: bool,
+        #[clap(short, long, default_value_t = Length::Sixteen)]
+        length: Length,
+        #[clap(long, default_value_t = false)]
+        symbols: bool,
+        #[clap(long, default_value_t = true)]
+        uppercase: bool,
+        #[clap(long, default_value_t = true)]
+        lowercase: bool,
+        #[clap(long, default_value_t = true)]
+        numbers: bool,
     },
     #[clap(
         about = "Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]",
@@ -38,7 +51,7 @@ pub enum Command {
     },
     List {
         #[clap(short, long)]
-        master: String,
+        master: Option<String>,
     },
     Remove {
         #[clap(short, long)]
@@ -46,7 +59,7 @@ pub enum Command {
         #[clap(short, long, aliases=&["user"])]
         username: Option<String>,
         #[clap(short, long)]
-        master: String,
+        master: Option<String>,
     },
     Show {
         #[clap(short, long)]
@@ -54,7 +67,7 @@ pub enum Command {
         #[clap(short, long, aliases=&["user"])]
         username: Option<String>,
         #[clap(short, long)]
-        master: String,
+        master: Option<String>,
     },
 }
 
@@ -66,7 +79,17 @@ impl Command {
                 username,
                 password,
                 master,
-            } => add_password(service, username, master, password).expect("Failed to add password"),
+                generate,
+                length,
+                symbols,
+                uppercase,
+                lowercase,
+                numbers,
+            } => add_password(
+                service, username, master, password, generate, length, symbols, uppercase,
+                lowercase, numbers,
+            )
+            .expect("Failed to add password"),
             Command::Generate {
                 length,
                 symbols,

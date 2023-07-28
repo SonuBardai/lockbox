@@ -48,6 +48,7 @@ impl Passwords {
         Ok(passwords)
     }
     pub fn print_all(&self) {
+        // println!("{:?}", self.0);
         self.0.iter().for_each(|pwd| {
             if let Some(username) = &pwd.username {
                 println!(
