@@ -1,4 +1,4 @@
-use crate::cli::Command;
+use crate::cli::commands::Command;
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use std::fmt::Display;
 
