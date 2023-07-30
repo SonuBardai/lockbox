@@ -4,6 +4,8 @@
 
 Lockbox is a command-line tool for generating and managing passwords. It uses strong encryption algorithms to securely store your passwords, so you can be sure that your data is safe.
 
+[![codecov](https://codecov.io/gh/SonuBardai/lockbox/branch/main/graph/badge.svg?token=XV39653NA5)](https://codecov.io/gh/SonuBardai/lockbox)
+
 ### Usage
 To use Rust Password Manager, first make sure you have Rust installed on your system. Then, clone this repository and run cargo build to build the project.
 

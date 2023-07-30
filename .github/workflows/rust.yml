@@ -37,3 +37,23 @@ jobs:
       - name: Run linter
         working-directory: .
         run: cargo clippy -- -D warnings
+
+      - name: Run tests
+        working-directory: .
+        run: cargo test --all-features
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: llvm-tools-preview
+          override: true
+      - uses: Swatinem/fucov@v1
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
