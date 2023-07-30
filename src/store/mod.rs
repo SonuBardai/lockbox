@@ -112,6 +112,7 @@ impl PasswordStore {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use tempfile::NamedTempFile;
 
     use super::*;
@@ -128,28 +129,19 @@ mod tests {
         assert!(Path::new(temp_file_name).exists());
     }
 
-    #[test]
-    fn test_load_passwords() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let store = PasswordStore::new(temp_file_name, TEST_MASTER_PASSWORD.to_string())
-            .unwrap()
-            .load_passwords()
-            .unwrap();
-        assert!(store.passwords.is_some());
-        let expected_passwords = Passwords::new();
-        assert_eq!(store.passwords.unwrap(), expected_passwords);
-    }
-
-    #[test]
-    fn test_load_after_store_passwords() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store = PasswordStore::new(temp_file_name, TEST_MASTER_PASSWORD.to_string())
-            .unwrap()
-            .load_passwords()
-            .unwrap();
-        let test_passwords = Vec::from([
+    #[rstest]
+    #[case(Vec::new())]
+    #[case(
+        Vec::from([
+            PasswordEntry::new(
+                "test_service_1".to_string(),
+                Some("test_username_1".to_string()),
+                "test_password_1".to_string(),
+            ),
+        ])
+    )]
+    #[case(
+        Vec::from([
             PasswordEntry::new(
                 "test_service_1".to_string(),
                 Some("test_username_1".to_string()),
@@ -160,7 +152,15 @@ mod tests {
                 Some("test_username_2".to_string()),
                 "test_password_2".to_string(),
             ),
-        ]);
+        ])
+    )]
+    fn test_load_after_store_passwords(#[case] test_passwords: Vec<PasswordEntry>) {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut store = PasswordStore::new(temp_file_name, TEST_MASTER_PASSWORD.to_string())
+            .unwrap()
+            .load_passwords()
+            .unwrap();
         test_passwords.iter().for_each(|test_password| {
             store
                 .passwords
