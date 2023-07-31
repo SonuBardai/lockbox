@@ -204,4 +204,64 @@ mod tests {
             );
         });
     }
+
+    #[rstest(
+        test_passwords,
+        service,
+        username,
+        expected,
+        case(
+            Vec::new(),
+            "test_service",
+            Some("test_username"),
+            false
+        ),
+        case(
+            vec![
+                PasswordEntry::new(
+                    "test_service_1".to_string(),
+                    Some("test_username_1".to_string()),
+                    "test_password_1".to_string(),
+                ),
+            ],
+            "test_service_1",
+            Some("test_username_1"),
+            true
+        ),
+        case(
+            vec![
+                PasswordEntry::new(
+                    "test_service_1".to_string(),
+                    Some("test_username_1".to_string()),
+                    "test_password_1".to_string(),
+                ),
+                PasswordEntry::new(
+                    "test_service_2".to_string(),
+                    Some("test_username_2".to_string()),
+                    "test_password_2".to_string(),
+                ),
+            ],
+            "test_service_2",
+            Some("test_username_2"),
+            true
+        ),
+)]
+    fn test_find_password(
+        test_passwords: Vec<PasswordEntry>,
+        service: &str,
+        username: Option<&str>,
+        expected: bool,
+    ) {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut store =
+            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
+                .unwrap()
+                .load_passwords()
+                .unwrap();
+        store.passwords = Some(test_passwords.into());
+        let found_password =
+            store.find_password(service.to_string(), username.map(|u| u.to_string()));
+        assert_eq!(found_password.is_some(), expected);
+    }
 }
