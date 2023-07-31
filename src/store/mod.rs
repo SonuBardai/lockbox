@@ -209,11 +209,13 @@ mod tests {
         test_passwords,
         service,
         username,
+        expected_password,
         expect_password_found,
         case(
             Vec::new(),
             "test_service",
             Some("test_username"),
+            None,
             false
         ),
         case(
@@ -226,6 +228,11 @@ mod tests {
             ],
             "test_service_1",
             Some("test_username_1"),
+            Some(PasswordEntry::new(
+                "test_service_1".to_string(),
+                Some("test_username_1".to_string()),
+                "test_password_1".to_string(),
+            )),
             true
         ),
         case(
@@ -243,6 +250,11 @@ mod tests {
             ],
             "test_service_2",
             Some("test_username_2"),
+            Some(PasswordEntry::new(
+                "test_service_2".to_string(),
+                Some("test_username_2".to_string()),
+                "test_password_2".to_string(),
+            )),
             true
         ),
     )]
@@ -250,6 +262,7 @@ mod tests {
         test_passwords: Vec<PasswordEntry>,
         service: &str,
         username: Option<&str>,
+        expected_password: Option<PasswordEntry>,
         expect_password_found: bool,
     ) {
         let temp_file = NamedTempFile::new().unwrap();
@@ -270,6 +283,11 @@ mod tests {
             } else {
                 assert_eq!(found_password.username, None);
             }
+        }
+        if let Some(expected_password) = expected_password {
+            assert_eq!(found_password, Some(&expected_password));
+        } else {
+            assert_eq!(found_password, None);
         }
     }
 }
