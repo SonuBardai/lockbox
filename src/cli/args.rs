@@ -1,38 +1,29 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use std::fmt::Display;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, PartialEq)]
 #[clap(name = "lockbox", about = "A password manager and generator")]
 pub struct Args {
     #[clap(subcommand)]
     pub command: Command,
 }
 
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Copy, Clone, Parser, PartialEq)]
 pub enum Length {
-    Eight,
-    Sixteen,
-    ThirtyTwo,
+    Eight = 8,
+    Sixteen = 16,
+    ThirtyTwo = 32,
 }
 
 impl Length {
     pub fn get_val(self) -> usize {
-        match self {
-            Self::Eight => 8,
-            Self::Sixteen => 16,
-            Self::ThirtyTwo => 32,
-        }
+        self as usize
     }
 }
 
 impl Display for Length {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let l = match self {
-            Self::Eight => "8",
-            Self::Sixteen => "16",
-            Self::ThirtyTwo => "32",
-        };
-        write!(f, "{}", l)
+        write!(f, "{}", *self as usize)
     }
 }
 
@@ -49,7 +40,7 @@ impl ValueEnum for Length {
     }
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, PartialEq)]
 pub enum Command {
     Add {
         #[clap(short, long)]
@@ -113,4 +104,78 @@ pub enum Command {
         #[clap(short, long)]
         master: Option<String>,
     },
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest(
+    input,
+    expected,
+    case(
+        &["lockbox", "add", "-s", "test_service", "-u", "test_username", "-p", "test_password"],
+        Args {
+            command: Command::Add {
+                service: "test_service".to_string(),
+                username: Some("test_username".to_string()),
+                password: Some("test_password".to_string()),
+                master: None,
+                generate: false,
+                length: Length::Sixteen,
+                symbols: false,
+                uppercase: true,
+                lowercase: true,
+                numbers: true,
+            },
+        }
+    ),
+    case(
+        &["lockbox", "generate", "-l", "32", "-s"],
+        Args {
+            command: Command::Generate {
+                length: Length::ThirtyTwo,
+                symbols: true,
+                uppercase: true,
+                lowercase: true,
+                numbers: true,
+                count: 1,
+            },
+        }
+    ),
+    case(
+        &["lockbox", "list", "--master", "master_password"],
+        Args {
+            command: Command::List {
+                master: Some("master_password".to_string()),
+                show_passwords: false,
+            },
+        }
+    ),
+    case(
+        &["lockbox", "remove", "-s", "service"],
+        Args {
+            command: Command::Remove {
+                service: "service".to_string(),
+                username: None,
+                master: None,
+            },
+        }
+    ),
+    case(
+        &["lockbox", "show", "-s", "service"],
+        Args {
+            command: Command::Show {
+                service: "service".to_string(),
+                username: None,
+                master: None,
+            },
+        }
+    )
+)]
+    fn test_args(input: &[&str], expected: Args) {
+        let args = Args::parse_from(input);
+        assert_eq!(args, expected);
+    }
 }
