@@ -209,7 +209,7 @@ mod tests {
         test_passwords,
         service,
         username,
-        expected,
+        expect_password_found,
         case(
             Vec::new(),
             "test_service",
@@ -245,12 +245,12 @@ mod tests {
             Some("test_username_2"),
             true
         ),
-)]
+    )]
     fn test_find_password(
         test_passwords: Vec<PasswordEntry>,
         service: &str,
         username: Option<&str>,
-        expected: bool,
+        expect_password_found: bool,
     ) {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
@@ -262,6 +262,14 @@ mod tests {
         store.passwords = Some(test_passwords.into());
         let found_password =
             store.find_password(service.to_string(), username.map(|u| u.to_string()));
-        assert_eq!(found_password.is_some(), expected);
+        assert_eq!(found_password.is_some(), expect_password_found);
+        if let Some(found_password) = found_password {
+            assert_eq!(found_password.service, service);
+            if let Some(username) = username {
+                assert_eq!(found_password.username.as_deref(), Some(username));
+            } else {
+                assert_eq!(found_password.username, None);
+            }
+        }
     }
 }
