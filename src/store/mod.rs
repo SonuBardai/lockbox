@@ -28,7 +28,7 @@ impl PasswordStore {
             fs::write(&file_name, content)?;
         }
         let store = Self {
-            file_name: file_name.to_owned(),
+            file_name: file_name.to_string(),
             master_password,
             passwords: None,
         };
@@ -132,6 +132,21 @@ mod tests {
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
         assert!(Path::new(temp_file_name).exists());
+    }
+
+    #[test]
+    fn test_new_password_store_with_nonexistent_file() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let temp_file_name = temp_dir.path().join("nonexistent_file");
+        let store = PasswordStore::new(
+            temp_file_name.to_str().unwrap().to_string(),
+            TEST_MASTER_PASSWORD.to_string(),
+        )
+        .unwrap();
+        assert_eq!(store.file_name, temp_file_name.to_str().unwrap());
+        assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
+        assert!(store.passwords.is_none());
+        assert!(Path::new(temp_file_name.to_str().unwrap()).exists());
     }
 
     #[rstest]
