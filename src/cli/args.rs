@@ -178,4 +178,15 @@ mod test {
         let args = Args::parse_from(input);
         assert_eq!(args, expected);
     }
+
+    #[rstest(
+        input,
+        expected,
+        case(Length::Eight, 8),
+        case(Length::Sixteen, 16),
+        case(Length::ThirtyTwo, 32)
+    )]
+    fn test_length_get_val(input: Length, expected: usize) {
+        assert_eq!(input.get_val(), expected)
+    }
 }
