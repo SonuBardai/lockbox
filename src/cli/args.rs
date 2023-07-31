@@ -1,4 +1,3 @@
-use crate::cli::commands::Command;
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use std::fmt::Display;
 
@@ -48,4 +47,70 @@ impl ValueEnum for Length {
             Length::ThirtyTwo => Some(PossibleValue::new("32")),
         }
     }
+}
+
+#[derive(Parser, Debug)]
+pub enum Command {
+    Add {
+        #[clap(short, long)]
+        service: String,
+        #[clap(short, long, aliases=&["user"])]
+        username: Option<String>,
+        #[clap(short, long)]
+        password: Option<String>,
+        #[clap(short, long)]
+        master: Option<String>,
+        #[clap(short, long, default_value_t = false)]
+        generate: bool,
+        #[clap(short, long, default_value_t = Length::Sixteen)]
+        length: Length,
+        #[clap(long, default_value_t = false)]
+        symbols: bool,
+        #[clap(long, default_value_t = true)]
+        uppercase: bool,
+        #[clap(long, default_value_t = true)]
+        lowercase: bool,
+        #[clap(long, default_value_t = true)]
+        numbers: bool,
+    },
+    #[clap(
+        about = "Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]",
+        long_about = "Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]"
+    )]
+    Generate {
+        #[clap(short, long, default_value_t = Length::Sixteen)]
+        length: Length,
+        #[clap(short, long, default_value_t = false)]
+        symbols: bool,
+        #[clap(short('U'), long, default_value_t = true)]
+        uppercase: bool,
+        #[clap(short('u'), long, default_value_t = true)]
+        lowercase: bool,
+        #[clap(short, long, default_value_t = true)]
+        numbers: bool,
+        #[clap(short, long, default_value_t = 1)]
+        count: usize,
+    },
+    List {
+        #[clap(short, long)]
+        master: Option<String>,
+        #[clap(short, long, default_value_t = false, aliases=&["show", "show-passwords", "reveal"])]
+        show_passwords: bool,
+    },
+    Remove {
+        #[clap(short, long)]
+        service: String,
+        #[clap(short, long, aliases=&["user"])]
+        username: Option<String>,
+        #[clap(short, long)]
+        master: Option<String>,
+    },
+    Show {
+        #[clap(short, long)]
+        service: String,
+        #[clap(short, long, aliases=&["user"])]
+        username: Option<String>,
+        #[clap(short, long)]
+        master: Option<String>,
+    },
 }

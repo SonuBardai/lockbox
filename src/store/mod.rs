@@ -14,15 +14,18 @@ pub struct PasswordStore {
 }
 
 impl PasswordStore {
-    pub fn new(file_name: &str, master_password: String) -> anyhow::Result<Self> {
-        let password_json = Path::new(file_name);
-        if !password_json.exists() || fs::metadata(file_name)?.len() == 0 {
+    pub fn new(file_name: String, master_password: String) -> anyhow::Result<Self> {
+        let file_path = Path::new(&file_name);
+        if !file_path.exists() {
+            fs::File::create(file_path)?;
+        }
+        if fs::metadata(&file_name)?.len() == 0 {
             let salt = get_random_salt();
             let (empty_json, nonce) = encrypt_contents("[]", &master_password, &salt);
             let mut content = salt.to_vec();
             content.extend(nonce);
             content.extend(empty_json);
-            std::fs::write(file_name, content)?;
+            fs::write(&file_name, content)?;
         }
         let store = Self {
             file_name: file_name.to_owned(),
@@ -122,7 +125,9 @@ mod tests {
     fn test_new_password_store() {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
-        let store = PasswordStore::new(temp_file_name, TEST_MASTER_PASSWORD.to_string()).unwrap();
+        let store =
+            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
+                .unwrap();
         assert_eq!(store.file_name, temp_file_name);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
@@ -157,10 +162,11 @@ mod tests {
     fn test_load_after_store_passwords(#[case] test_passwords: Vec<PasswordEntry>) {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store = PasswordStore::new(temp_file_name, TEST_MASTER_PASSWORD.to_string())
-            .unwrap()
-            .load_passwords()
-            .unwrap();
+        let mut store =
+            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
+                .unwrap()
+                .load_passwords()
+                .unwrap();
         test_passwords.iter().for_each(|test_password| {
             store
                 .passwords
