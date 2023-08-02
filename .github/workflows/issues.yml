@@ -1,15 +1,15 @@
-name: "Track TODOs"
+name: "Run TODO Actions"
 on:
   push:
     branches:
       - main
 jobs:
-  track-todos:
+  todos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Track TODOs
-        uses: ribtoks/tdg-github-action@master
-        with:
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LABEL: "tests=testing"
+      - uses: actions/checkout@v1
+      - name: todo-actions
+        uses: dtinth/todo-actions@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TODO_ACTIONS_MONGO_URL: ${{ secrets.TODO_ACTIONS_MONGO_URL }}
