@@ -18,6 +18,6 @@ jobs:
           autoAssign: false
           blobLines: 10
           blobLinesBefore: 10
-          titleSimilarity: 100
+          titleSimilarity: 0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
