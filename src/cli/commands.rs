@@ -38,8 +38,8 @@ pub fn get_random_password(
         .unwrap()
 }
 
-// TODO: This is a test TODO comment
-// BODY: This is the test body of hte test commetn
+//+TODO: This is a test TODO comment
+//+This is test body
 pub fn generate_password(
     length: Length,
     symbols: bool,
