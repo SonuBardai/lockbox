@@ -38,7 +38,7 @@ pub fn get_random_password(
         .unwrap()
 }
 
-// TODO: Add tests to `generate_password` in cli/commands.rs
+// TODO [$64c9c656afe88a0008d4caa8]: Add tests to `generate_password` in cli/commands.rs
 // labels: testing
 pub fn generate_password(
     length: Length,
