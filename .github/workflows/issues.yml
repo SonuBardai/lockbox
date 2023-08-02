@@ -1,12 +1,15 @@
-name: "Run TODO to Issue"
+name: "Track TODOs"
 on:
   push:
     branches:
       - main
 jobs:
-  todo:
-    runs-on: "ubuntu-latest"
+  track-todos:
+    runs-on: ubuntu-latest
     steps:
-      - uses: "actions/checkout@v3"
-      - name: "TODO to Issue"
-        uses: "alstr/todo-to-issue-action@v4"
+      - uses: actions/checkout@v2
+      - name: Track TODOs
+        uses: fabasoad/track-todo-action@v1.0.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABELS: "tests=testing"
