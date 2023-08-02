@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       importAll:
-        default: "true"
-        required: true
+        default: "false"
+        required: false
         type: boolean
         description: Enable, if you want to import all TODOs. Runs on checked out branch! Only use if you're sure what you are doing.
   push:
     branches:
       - main
+      - 18-setup-todo-issues-for-the-repo
 
 permissions:
   issues: write
