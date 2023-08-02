@@ -39,6 +39,7 @@ pub fn get_random_password(
 }
 
 // TODO: This is a test TODOcomment
+// BODY: This is the test body of hte test commetn
 pub fn generate_password(
     length: Length,
     symbols: bool,
