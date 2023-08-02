@@ -28,10 +28,10 @@ jobs:
       - name: Run Issue Bot
         uses: derjuulsn/todo-issue@main
         with:
-          autoAssign: false
-          bodyKeywords: ["BODY"]
-          blobLines: 10
-          blobLinesBefore: 10
-          label: ["tests=testing"]
+          - autoAssign: false
+          - bodyKeywords: ["BODY"]
+          - blobLines: 10
+          - blobLinesBefore: 10
+          - label: ["tests=testing"]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
