@@ -1,17 +1,9 @@
-name: "Run TODO Actions"
-on:
-  push:
-    branches:
-      - main
+name: "Run TODO to Issue"
+on: ["push"]
 jobs:
-  todos:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v1
-        with:
-          token: ${{ secrets.PUSH_TOKEN }}
-      - name: todo-actions
-        uses: dtinth/todo-actions@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
-          TODO_ACTIONS_MONGO_URL: ${{ secrets.TODO_ACTIONS_MONGO_URL }}
+      - uses: "actions/checkout@v3"
+      - name: "TODO to Issue"
+        uses: "alstr/todo-to-issue-action@v4"
