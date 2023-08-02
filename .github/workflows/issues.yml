@@ -17,7 +17,6 @@ jobs:
         uses: derjuulsn/todo-issue@main
         with:
           autoAssign: false
-          bodyKeywords: BODY
           blobLines: 10
           blobLinesBefore: 10
         env:
