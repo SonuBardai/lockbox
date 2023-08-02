@@ -1,23 +1,27 @@
-name: Create issues from TODOs
+name: "Todos"
 on:
   push:
     branches:
       - main
-permissions:
-  issues: write
-  repository-projects: read
-  contents: read
 jobs:
-  todos:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
-      - name: Run Issue Bot
-        uses: derjuulsn/todo-issue@main
+      - uses: "actions/checkout@master"
+      - name: "TODO-2-GH-Issue"
+        uses: "jamminroot/todo-2-gh-issue@master"
         with:
-          autoAssign: false
-          blobLines: 10
-          blobLinesBefore: 10
-          titleSimilarity: 99
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TODO_PATTERN: "(?<=\\/\\/ ?TODO[ :]).+"
+          GH_LABEL: "TODO"
+          TRIM: ',: "'
+          TIMEOUT: 1000
+          LINES_BEFORE: 2
+          LINES_AFTER: 5
+          LABELS_PATTERN: "(?<=\\[).+?(?=\\])"
+          LABELS_REPLACE_PATTERN: "\\[(.+?)\\]"
+          IGNORED_LINES_LENGTH: 255
+          EXCLUDED_PATHS: /FilePath/ToExclude/1|/FilePath/ToExclude/2
+          INCLUDED_PATHS: /FilePath/ToExclude/1/Exception|/FilePath/ToExclude/2/Exception
+          FILE_PATTERN: ".*cs"
+        id: "todo"
