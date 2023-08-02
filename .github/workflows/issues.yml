@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - 18-setup-todo-issues-for-the-repo
 permissions:
   issues: write
   repository-projects: read
