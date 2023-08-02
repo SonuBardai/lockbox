@@ -39,6 +39,7 @@ pub fn get_random_password(
 }
 
 // TODO: Add tests to `generate_password` in cli/commands.rs
+// labels: testing
 pub fn generate_password(
     length: Length,
     symbols: bool,

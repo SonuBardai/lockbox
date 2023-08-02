@@ -4,11 +4,9 @@ on:
     branches:
       - main
 jobs:
-  build:
+  todo:
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v3"
       - name: "TODO to Issue"
         uses: "alstr/todo-to-issue-action@v4"
-        with:
-          AUTO_LABEL: "tests=testing, beginner=good-first-issue, easy=good-first-issue"
