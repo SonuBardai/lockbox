@@ -29,6 +29,12 @@ impl Default for Passwords {
     }
 }
 
+impl From<Vec<PasswordEntry>> for Passwords {
+    fn from(passwords: Vec<PasswordEntry>) -> Self {
+        Passwords(passwords)
+    }
+}
+
 impl Passwords {
     pub fn new() -> Self {
         Passwords(vec![])
