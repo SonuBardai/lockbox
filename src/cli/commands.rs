@@ -38,7 +38,7 @@ pub fn get_random_password(
         .unwrap()
 }
 
-// TODO: This is a test TODO comment
+// TODO: This is a test TODOcomment
 pub fn generate_password(
     length: Length,
     symbols: bool,
