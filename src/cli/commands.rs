@@ -39,7 +39,6 @@ pub fn get_random_password(
         .unwrap()
 }
 
-// TODO: Add tests for `generate_password` in cli/commands.rs
 pub fn generate_password(
     length: Length,
     symbols: bool,
