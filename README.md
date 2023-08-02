@@ -33,7 +33,7 @@ For example, to generate a new password with default properties, you can run car
 [Store](./src/store/README.md)
 
 ### Contributing
-Contributions are welcome! If you’d like to contribute, please feel free to open an issue or submit a pull request.
+Contributions are welcome! If you’d like to contribute, please feel free to open an issue or submit a pull request. Checkout our [CONTRIBUTING](CONTRIBUTING.md) file for details on how to contribute.
 
 ### License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
