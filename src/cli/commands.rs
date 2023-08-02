@@ -20,7 +20,6 @@ pub fn add_password(
     Ok(())
 }
 
-// TODO: Add tests to `get_random_password` in cli/commands.rs
 pub fn get_random_password(
     length: Length,
     symbols: bool,
@@ -39,6 +38,7 @@ pub fn get_random_password(
         .unwrap()
 }
 
+// TODO: Add tests to `generate_password` in cli/commands.rs
 pub fn generate_password(
     length: Length,
     symbols: bool,
