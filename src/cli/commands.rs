@@ -38,8 +38,6 @@ pub fn get_random_password(
         .unwrap()
 }
 
-//+TODO: This is a test TODO comment
-//+This is test body
 pub fn generate_password(
     length: Length,
     symbols: bool,
@@ -72,6 +70,8 @@ pub fn generate_password(
     }
 }
 
+//+TODO: This is a test TODO comment
+//+This is test body
 pub fn show_password(
     file_name: String,
     service: String,
