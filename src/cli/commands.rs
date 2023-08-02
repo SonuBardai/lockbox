@@ -39,6 +39,7 @@ pub fn get_random_password(
         .unwrap()
 }
 
+// TODO: Add tests for `get_random_password` in cli/commands.rs
 pub fn generate_password(
     length: Length,
     symbols: bool,
@@ -71,6 +72,7 @@ pub fn generate_password(
     }
 }
 
+// TODO: Add tests for `show_password` in cli/commands.rs
 pub fn show_password(
     file_name: String,
     service: String,
@@ -96,6 +98,7 @@ pub fn list_passwords(
     Ok(())
 }
 
+// TODO: Add tests for `remove_password` in cli/commands.rs
 pub fn remove_password(
     file_name: String,
     service: String,
