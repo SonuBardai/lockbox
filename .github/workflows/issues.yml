@@ -11,5 +11,5 @@ jobs:
       - name: Track TODOs
         uses: ribtoks/tdg-github-action@master
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LABELS: "tests=testing"
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABEL: "tests=testing"
