@@ -104,7 +104,7 @@ impl PasswordStore {
             .and_then(|passwords| passwords.find(service, username))
     }
 
-    pub fn list_passwords(&self, show_passwords: bool) {
+    pub fn print_passwords(&self, show_passwords: bool) {
         if let Some(passwords) = self.passwords.as_ref() {
             passwords.print_all(show_passwords);
         } else {

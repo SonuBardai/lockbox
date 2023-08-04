@@ -79,7 +79,11 @@ pub fn show_password(
     let master = master.unwrap_or_else(|| read_input("master password"));
     let passwords = PasswordStore::new(file_name, master)?.load_passwords()?;
     let password = passwords.find_password(service, username);
-    println!("Password: {:?}", password);
+    if let Some(password) = password {
+        password.print_password();
+    } else {
+        println!("Password not found");
+    }
     Ok(())
 }
 
@@ -91,7 +95,7 @@ pub fn list_passwords(
     let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(file_name, master)?
         .load_passwords()?
-        .list_passwords(show_passwords);
+        .print_passwords(show_passwords);
     Ok(())
 }
 
