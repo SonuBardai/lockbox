@@ -2,6 +2,7 @@ use crate::{
     cli::{args::Length, io::read_input},
     store::PasswordStore,
 };
+use colored::*;
 use passwords::PasswordGenerator;
 
 pub fn add_password(
@@ -53,18 +54,19 @@ pub fn generate_password(
         .numbers(numbers)
         .symbols(symbols)
         .strict(true);
+    println!();
     if count > 1 {
         match password_generator.generate(count) {
             Ok(passwords) => {
                 for password in passwords {
-                    println!("{}", password)
+                    println!("{}", password.green())
                 }
             }
             Err(err) => println!("Error generating password: {}", err),
         }
     } else {
         match password_generator.generate_one() {
-            Ok(password) => println!("{}", password),
+            Ok(password) => println!("{}", password.green()),
             Err(err) => println!("Error generating password: {}", err),
         }
     }
@@ -80,7 +82,7 @@ pub fn show_password(
     let passwords = PasswordStore::new(file_name, master)?.load_passwords()?;
     let password = passwords.find_password(service, username);
     if let Some(password) = password {
-        password.print_password();
+        password.print_password(Some(Color::Blue));
     } else {
         println!("Password not found");
     }
@@ -95,7 +97,7 @@ pub fn list_passwords(
     let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(file_name, master)?
         .load_passwords()?
-        .print_passwords(show_passwords);
+        .print_passwords(show_passwords, Some(Color::Blue));
     Ok(())
 }
 
