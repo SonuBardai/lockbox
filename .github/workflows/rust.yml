@@ -11,7 +11,10 @@ jobs:
       matrix:
         toolchain: [stable, beta, nightly]
     runs-on: ubuntu-latest
-    steps:
+    steps
+      - name: Install lxcb dependencies
+        run: sudo apt-get update && sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev:
+
       - name: Checkout code
         uses: actions/checkout@v2
 
