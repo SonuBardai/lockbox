@@ -43,7 +43,7 @@ impl PasswordStore {
         let encrypted_data = &encrypted_file[28..];
         let plain_text = cipher
             .decrypt(nonce.into(), encrypted_data.as_ref())
-            .map_err(|e| anyhow::anyhow!("Failed to decrypt passwords to plain text: {:?}", e))?;
+            .map_err(|_| anyhow::anyhow!("Master password incorrect. Please try again."))?;
         let plain_text_str = String::from_utf8(plain_text)?;
         let parsed_passwords = Passwords::parse_passwords(&plain_text_str)?;
         self.passwords = Some(parsed_passwords);
