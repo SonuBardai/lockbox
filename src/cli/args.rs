@@ -1,10 +1,22 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use std::fmt::Display;
+use terminal_size::{terminal_size, Height, Width};
 
 const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
+const ABOUT: &str = "A password manager and generator";
+const ASCII_ART_ABOUT: &str =
+    "\n\n\n\n                                                                                
+@(        🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@     
+@(        🦀      🦀  @@        @@@@@@@    @. @@@    @@    @@     @&        
+@@@@@@@@  🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@\n\n\n\n";
 
 #[derive(Parser, Debug, PartialEq)]
-#[clap(name = "lockbox", about = "A password manager and generator")]
+#[clap(
+    name = "lockbox",
+    about = if let Some((Width(w), Height(h))) = terminal_size() {
+            if w >= 80 && h >= 10 {format!("{}{}", ASCII_ART_ABOUT, ABOUT)} else {ABOUT.to_string()} } 
+            else {ABOUT.to_string()} 
+)]
 pub struct Args {
     #[clap(subcommand)]
     pub command: Command,
