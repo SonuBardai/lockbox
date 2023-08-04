@@ -10,12 +10,22 @@ const ASCII_ART_ABOUT: &str =
 @(        🦀      🦀  @@        @@@@@@@    @. @@@    @@    @@     @&        
 @@@@@@@@  🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@\n\n\n\n";
 
+fn get_about(terminal_size: Option<(Width, Height)>) -> String {
+    if let Some((Width(w), Height(h))) = terminal_size {
+        if w >= 80 && h >= 10 {
+            format!("{}{}", ASCII_ART_ABOUT, ABOUT)
+        } else {
+            ABOUT.to_string()
+        }
+    } else {
+        ABOUT.to_string()
+    }
+}
+
 #[derive(Parser, Debug, PartialEq)]
 #[clap(
     name = "lockbox",
-    about = if let Some((Width(w), Height(h))) = terminal_size() {
-            if w >= 80 && h >= 10 {format!("{}{}", ASCII_ART_ABOUT, ABOUT)} else {ABOUT.to_string()} } 
-            else {ABOUT.to_string()} 
+    about = get_about(terminal_size()),
 )]
 pub struct Args {
     #[clap(subcommand)]
@@ -132,6 +142,17 @@ pub enum Command {
 mod test {
     use super::*;
     use rstest::rstest;
+
+    #[rstest(
+        input,
+        expected,
+        case(Some((Width(80), Height(10))), format!("{}{}", ASCII_ART_ABOUT, ABOUT)),
+        case(Some((Width(79), Height(10))), ABOUT.to_string()),
+        case(None, ABOUT.to_string())
+    )]
+    fn test_get_about(input: Option<(Width, Height)>, expected: String) {
+        assert_eq!(get_about(input), expected);
+    }
 
     #[rstest(
     input,
