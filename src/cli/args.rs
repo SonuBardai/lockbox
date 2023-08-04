@@ -1,6 +1,8 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use std::fmt::Display;
 
+const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
+
 #[derive(Parser, Debug, PartialEq)]
 #[clap(name = "lockbox", about = "A password manager and generator")]
 pub struct Args {
@@ -43,6 +45,8 @@ impl ValueEnum for Length {
 #[derive(Parser, Debug, PartialEq)]
 pub enum Command {
     Add {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string())]
+        file_name: String,
         #[clap(short, long)]
         service: String,
         #[clap(short, long, aliases=&["user"])]
@@ -83,12 +87,16 @@ pub enum Command {
         count: usize,
     },
     List {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string())]
+        file_name: String,
         #[clap(short, long)]
         master: Option<String>,
         #[clap(short, long, default_value_t = false, aliases=&["show", "show-passwords", "reveal"])]
         show_passwords: bool,
     },
     Remove {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string())]
+        file_name: String,
         #[clap(short, long)]
         service: String,
         #[clap(short, long, aliases=&["user"])]
@@ -97,6 +105,8 @@ pub enum Command {
         master: Option<String>,
     },
     Show {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string())]
+        file_name: String,
         #[clap(short, long)]
         service: String,
         #[clap(short, long, aliases=&["user"])]
@@ -115,9 +125,28 @@ mod test {
     input,
     expected,
     case(
+        &["lockbox", "add", "-f", "test_passwords", "-s", "test_service", "-u", "test_username", "-p", "test_password"],
+        Args {
+            command: Command::Add {
+                file_name: "test_passwords".to_string(),
+                service: "test_service".to_string(),
+                username: Some("test_username".to_string()),
+                password: Some("test_password".to_string()),
+                master: None,
+                generate: false,
+                length: Length::Sixteen,
+                symbols: false,
+                uppercase: true,
+                lowercase: true,
+                numbers: true,
+            },
+        }
+    ),
+    case(
         &["lockbox", "add", "-s", "test_service", "-u", "test_username", "-p", "test_password"],
         Args {
             command: Command::Add {
+                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
                 service: "test_service".to_string(),
                 username: Some("test_username".to_string()),
                 password: Some("test_password".to_string()),
@@ -148,6 +177,7 @@ mod test {
         &["lockbox", "list", "--master", "master_password"],
         Args {
             command: Command::List {
+                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
                 master: Some("master_password".to_string()),
                 show_passwords: false,
             },
@@ -157,6 +187,7 @@ mod test {
         &["lockbox", "remove", "-s", "service"],
         Args {
             command: Command::Remove {
+                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
                 service: "service".to_string(),
                 username: None,
                 master: None,
@@ -167,6 +198,7 @@ mod test {
         &["lockbox", "show", "-s", "service"],
         Args {
             command: Command::Show {
+                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
                 service: "service".to_string(),
                 username: None,
                 master: None,

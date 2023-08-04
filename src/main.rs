@@ -7,12 +7,11 @@ use lockbox::cli::{
     },
 };
 
-const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
-
 fn main() {
     let args = Args::parse();
     match args.command {
         Command::Add {
+            file_name,
             service,
             username,
             password,
@@ -31,13 +30,7 @@ fn main() {
             } else {
                 password
             };
-            add_password(
-                DEFAULT_PASSWORD_FILE_NAME.to_string(),
-                service,
-                username,
-                master,
-                password,
-            )
+            add_password(file_name, service, username, master, password)
         }
         .expect("Failed to add password"),
         Command::Generate {
@@ -49,35 +42,22 @@ fn main() {
             count,
         } => generate_password(length, symbols, uppercase, lowercase, numbers, count),
         Command::List {
+            file_name,
             master,
             show_passwords,
-        } => list_passwords(
-            DEFAULT_PASSWORD_FILE_NAME.to_string(),
-            master,
-            show_passwords,
-        )
-        .expect("Failed to get passwords"),
+        } => list_passwords(file_name, master, show_passwords).expect("Failed to get passwords"),
         Command::Remove {
+            file_name,
             service,
             username,
             master,
-        } => remove_password(
-            DEFAULT_PASSWORD_FILE_NAME.to_string(),
-            service,
-            username,
-            master,
-        )
-        .expect("Failed to remove password"),
+        } => remove_password(file_name, service, username, master)
+            .expect("Failed to remove password"),
         Command::Show {
+            file_name,
             service,
             username,
             master,
-        } => show_password(
-            DEFAULT_PASSWORD_FILE_NAME.to_string(),
-            service,
-            username,
-            master,
-        )
-        .expect("Failed to get passwords"),
+        } => show_password(file_name, service, username, master).expect("Failed to get passwords"),
     }
 }
