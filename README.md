@@ -12,6 +12,13 @@ To use Rust Password Manager, first make sure you have Rust installed on your sy
 Once you’ve built the project, you can run it using cargo run. Here’s an overview of the available commands:
 
 ```
+@(        🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@     
+@(        🦀     🦀  @@        @@@@@@@    @. @@@    @@    @@     @&        
+@@@@@@@@  🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@    
+
+
+
+ 
 A password manager and generator
 
 Usage: lockbox <COMMAND>
