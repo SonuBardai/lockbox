@@ -2,6 +2,7 @@ use crate::{
     cli::{args::Length, io::read_input},
     store::PasswordStore,
 };
+use clipboard::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
 
 pub fn add_password(
@@ -13,7 +14,16 @@ pub fn add_password(
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
     let password_store = PasswordStore::new(file_name, master)?.load_passwords()?;
-    let password = password.unwrap_or_else(|| read_input("password"));
+    let password = if let Some(password) = password {
+        let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
+        if let Ok(mut ctx) = ctx_result {
+            ctx.set_contents(password.to_owned()).unwrap();
+            println!("Random password generated and copied to clipboard");
+        }
+        password
+    } else {
+        read_input("password")
+    };
     password_store
         .add_password(service, username, password)?
         .store_passwords()?;
@@ -64,7 +74,15 @@ pub fn generate_password(
         }
     } else {
         match password_generator.generate_one() {
-            Ok(password) => println!("{}", password),
+            Ok(password) => {
+                let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
+                if let Ok(mut ctx) = ctx_result {
+                    ctx.set_contents(password.to_owned()).unwrap();
+                    println!("{} (Copied to Clipboard)", password)
+                } else {
+                    println!("{}", password)
+                }
+            }
             Err(err) => println!("Error generating password: {}", err),
         }
     }
