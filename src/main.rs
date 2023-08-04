@@ -30,9 +30,11 @@ fn main() {
             } else {
                 password
             };
-            add_password(file_name, service, username, master, password)
+            match add_password(file_name, service, username, master, password) {
+                Ok(_) => (),
+                Err(err) => eprintln!("Error: {}", err),
+            }
         }
-        .expect("Failed to add password"),
         Command::Generate {
             length,
             symbols,
@@ -45,19 +47,27 @@ fn main() {
             file_name,
             master,
             show_passwords,
-        } => list_passwords(file_name, master, show_passwords).expect("Failed to get passwords"),
+        } => match list_passwords(file_name, master, show_passwords) {
+            Ok(_) => (),
+            Err(err) => eprintln!("Error: {}", err),
+        },
         Command::Remove {
             file_name,
             service,
             username,
             master,
-        } => remove_password(file_name, service, username, master)
-            .expect("Failed to remove password"),
+        } => match remove_password(file_name, service, username, master) {
+            Ok(_) => println!("Password removed successfully"),
+            Err(err) => eprintln!("Error: {}", err),
+        },
         Command::Show {
             file_name,
             service,
             username,
             master,
-        } => show_password(file_name, service, username, master).expect("Failed to get passwords"),
+        } => match show_password(file_name, service, username, master) {
+            Ok(_) => (),
+            Err(err) => eprintln!("Error: {}", err),
+        },
     }
 }

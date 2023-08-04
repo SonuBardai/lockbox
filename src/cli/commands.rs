@@ -12,9 +12,9 @@ pub fn add_password(
     password: Option<String>,
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
+    let password_store = PasswordStore::new(file_name, master)?.load_passwords()?;
     let password = password.unwrap_or_else(|| read_input("password"));
-    PasswordStore::new(file_name, master)?
-        .load_passwords()?
+    password_store
         .add_password(service, username, password)?
         .store_passwords()?;
     Ok(())
