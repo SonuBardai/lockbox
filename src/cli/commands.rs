@@ -17,8 +17,12 @@ pub fn add_password(
     let password = if let Some(password) = password {
         let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
         if let Ok(mut ctx) = ctx_result {
-            ctx.set_contents(password.to_owned()).unwrap();
-            println!("Random password generated and copied to clipboard");
+            if ctx.set_contents(password.to_owned()).is_ok() {
+                println!("Random password generated and copied to clipboard")
+            } else {
+                println!("Random password generated");
+                println!("Note: Failed to copy password to clipboard");
+            }
         }
         password
     } else {
@@ -77,8 +81,12 @@ pub fn generate_password(
             Ok(password) => {
                 let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
                 if let Ok(mut ctx) = ctx_result {
-                    ctx.set_contents(password.to_owned()).unwrap();
-                    println!("{} (Copied to Clipboard)", password)
+                    if ctx.set_contents(password.to_owned()).is_ok() {
+                        println!("{} (Copied to Clipboard)", password);
+                    } else {
+                        println!("{}", password);
+                        println!("Note: Failed to copy password to clipboard");
+                    }
                 } else {
                     println!("{}", password)
                 }
