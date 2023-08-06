@@ -18,6 +18,10 @@ impl PasswordEntry {
     pub fn print_password(&self) {
         println!("Password: {}", self.password);
     }
+
+    pub fn password(&self) -> &str {
+        &self.password
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
