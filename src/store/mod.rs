@@ -7,7 +7,6 @@ use aes_gcm::aead::Aead;
 use std::fs;
 use std::path::Path;
 
-
 pub struct PasswordStore {
     pub file_name: String,
     master_password: String,
@@ -120,10 +119,10 @@ impl PasswordStore {
 
 #[cfg(test)]
 mod tests {
+    use super::PasswordEntry;
     use super::*;
     use rstest::rstest;
     use tempfile::NamedTempFile;
-    use super::PasswordEntry;
 
     const TEST_MASTER_PASSWORD: &str = "test_master";
 
@@ -131,8 +130,9 @@ mod tests {
     fn test_new_password_store() {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
-        let store = PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-            .unwrap();
+        let store =
+            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
+                .unwrap();
         assert_eq!(store.file_name, temp_file_name);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
@@ -309,32 +309,44 @@ mod tests {
             self.password_entry.password()
         }
     }
-    
+
     #[test]
     fn test_add_password() {
         // Create a new PasswordStore instance with a temporary file
         let temp_file = tempfile::NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store = PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        let mut store =
+            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
+                .unwrap();
         // Create a sample password to add
-        let password = PasswordEntry::new("service1".to_string(), Some("user1".to_string()), "password1".to_string());
+        let password = PasswordEntry::new(
+            "service1".to_string(),
+            Some("user1".to_string()),
+            "password1".to_string(),
+        );
 
         // Add the password to the store
-        store = store.add_password(
-            password.service.clone(),
-            password.username.clone(),
-            password.password().to_string(), // Use the password method to access the password
-        ).unwrap();
+        store = store
+            .add_password(
+                password.service.clone(),
+                password.username.clone(),
+                password.password().to_string(), // Use the password method to access the password
+            )
+            .unwrap();
 
         // Check if the password was added correctly
         assert!(store.passwords.is_some());
 
         let stored_passwords = store.passwords.unwrap();
 
-        let found_password = stored_passwords.find(password.service.clone(), password.username.clone()).unwrap();
+        let found_password = stored_passwords
+            .find(password.service.clone(), password.username.clone())
+            .unwrap();
         let password_wrapper = PasswordEntryWrapper::new(found_password.clone());
 
-        let found_password = stored_passwords.find(password.service.clone(), password.username.clone()).unwrap();
+        let found_password = stored_passwords
+            .find(password.service.clone(), password.username.clone())
+            .unwrap();
         assert_eq!(password.service, found_password.service);
         assert_eq!(password.username, found_password.username);
         assert_eq!(password.password(), password_wrapper.password()); // Use the password method to access the password
