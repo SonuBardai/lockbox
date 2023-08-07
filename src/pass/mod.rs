@@ -1,3 +1,4 @@
+use colored::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -15,8 +16,12 @@ impl PasswordEntry {
             password,
         }
     }
-    pub fn print_password(&self) {
-        println!("Password: {}", self.password);
+    pub fn print_password(&self, color: Option<Color>) {
+        if let Some(color) = color {
+            println!("Password: {}", self.password.color(color));
+        } else {
+            println!("Password: {}", self.password);
+        }
     }
 }
 
@@ -62,21 +67,54 @@ impl Passwords {
         let passwords: Passwords = serde_json::from_str(raw_passwords)?;
         Ok(passwords)
     }
-    pub fn print_all(&self, show_passwords: bool) {
+    pub fn print_all(&self, show_passwords: bool, color: Option<Color>) {
         self.0.iter().for_each(|pwd| {
             if show_passwords {
                 if let Some(username) = &pwd.username {
+                    if let Some(color) = color {
+                        println!(
+                            "Service: {}, Username: {}, Password: {}",
+                            pwd.service.color(color),
+                            username.color(color),
+                            pwd.password.color(color)
+                        )
+                    } else {
+                        println!(
+                            "Service: {}, Username: {}, Password: {}",
+                            pwd.service, username, pwd.password
+                        )
+                    }
+                } else if let Some(color) = color {
                     println!(
-                        "Service: {}, Username: {}, Password: {}",
-                        pwd.service, username, pwd.password
+                        "Service: {}, Password: {}",
+                        pwd.service.color(color),
+                        pwd.password.color(color)
                     )
                 } else {
                     println!("Service: {}, Password: {}", pwd.service, pwd.password)
                 }
             } else if let Some(username) = &pwd.username {
-                println!("Service: {}, Username: {}", pwd.service, username)
+                if let Some(color) = color {
+                    println!(
+                        "Service: {}, Username: {}, Password: {}",
+                        pwd.service.color(color),
+                        username.color(color),
+                        "***".color(color)
+                    )
+                } else {
+                    println!(
+                        "Service: {}, Username: {}, Password: ***",
+                        pwd.service, username
+                    )
+                }
+            } else if let Some(color) = color {
+                println!(
+                    "Service: {}, Password: {}",
+                    pwd.service.color(color),
+                    "***".color(color)
+                )
             } else {
-                println!("Service: {}", pwd.service)
+                println!("Service: {}, Password: ***", pwd.service)
             }
         })
     }
