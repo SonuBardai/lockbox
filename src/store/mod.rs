@@ -113,8 +113,6 @@ impl PasswordStore {
     }
 }
 
-// Rest of the code for crypto, pass, and other modules
-
 // Unit tests
 
 #[cfg(test)]
