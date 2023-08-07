@@ -84,16 +84,14 @@ impl Passwords {
                             pwd.service, username, pwd.password
                         )
                     }
+                } else if let Some(color) = color {
+                    println!(
+                        "Service: {}, Password: {}",
+                        pwd.service,
+                        pwd.password.color(color)
+                    )
                 } else {
-                    if let Some(color) = color {
-                        println!(
-                            "Service: {}, Password: {}",
-                            pwd.service,
-                            pwd.password.color(color)
-                        )
-                    } else {
-                        println!("Service: {}, Password: {}", pwd.service, pwd.password)
-                    }
+                    println!("Service: {}, Password: {}", pwd.service, pwd.password)
                 }
             } else if let Some(username) = &pwd.username {
                 if let Some(color) = color {
@@ -105,16 +103,14 @@ impl Passwords {
                     )
                 } else {
                     println!(
-                        "Service: {}, Username: {}, Password: {}",
-                        pwd.service, username, "***"
+                        "Service: {}, Username: {}, Password: ***",
+                        pwd.service, username
                     )
                 }
+            } else if let Some(color) = color {
+                println!("Service: {}, Password: {}", pwd.service, "***".color(color))
             } else {
-                if let Some(color) = color {
-                    println!("Service: {}, Password: {}", pwd.service, "***".color(color))
-                } else {
-                    println!("Service: {}, Password: {}", pwd.service, "***")
-                }
+                println!("Service: {}, Password: ***", pwd.service)
             }
         })
     }
