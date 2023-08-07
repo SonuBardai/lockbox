@@ -2,8 +2,17 @@ use crate::{
     cli::{args::Length, io::read_input},
     store::PasswordStore,
 };
+use anyhow::anyhow;
 use clipboard::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
+
+fn copy_to_clipboard(password: &str) -> anyhow::Result<()> {
+    let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
+    let mut ctx = ctx_result.map_err(|_| anyhow!("Unable to initialize clipboard"))?;
+    ctx.set_contents(password.to_owned())
+        .map_err(|_| anyhow!("Unable to set clipboard contents"))?;
+    Ok(())
+}
 
 pub fn add_password(
     file_name: String,
@@ -15,14 +24,11 @@ pub fn add_password(
     let master = master.unwrap_or_else(|| read_input("master password"));
     let password_store = PasswordStore::new(file_name, master)?.load_passwords()?;
     let password = if let Some(password) = password {
-        let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
-        if let Ok(mut ctx) = ctx_result {
-            if ctx.set_contents(password.to_owned()).is_ok() {
-                println!("Random password generated and copied to clipboard")
-            } else {
-                println!("Random password generated");
-                println!("Note: Failed to copy password to clipboard");
-            }
+        if copy_to_clipboard(&password).is_ok() {
+            println!("Random password generated and copied to clipboard");
+        } else {
+            println!("Random password generated");
+            println!("Note: Failed to copy password to clipboard");
         }
         password
     } else {
@@ -79,16 +85,11 @@ pub fn generate_password(
     } else {
         match password_generator.generate_one() {
             Ok(password) => {
-                let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
-                if let Ok(mut ctx) = ctx_result {
-                    if ctx.set_contents(password.to_owned()).is_ok() {
-                        println!("{} (Copied to Clipboard)", password);
-                    } else {
-                        println!("{}", password);
-                        println!("Note: Failed to copy password to clipboard");
-                    }
+                if copy_to_clipboard(&password).is_ok() {
+                    println!("{} (Copied to Clipboard)", password);
                 } else {
-                    println!("{}", password)
+                    println!("{}", password);
+                    println!("Note: Failed to copy password to clipboard");
                 }
             }
             Err(err) => println!("Error generating password: {}", err),
