@@ -4,6 +4,7 @@ use crate::{
     pass::Passwords,
 };
 use aes_gcm::aead::Aead;
+use colored::Color;
 use std::fs;
 use std::path::Path;
 
@@ -104,9 +105,9 @@ impl PasswordStore {
             .and_then(|passwords| passwords.find(service, username))
     }
 
-    pub fn print_passwords(&self, show_passwords: bool) {
+    pub fn print_passwords(&self, show_passwords: bool, color: Option<Color>) {
         if let Some(passwords) = self.passwords.as_ref() {
-            passwords.print_all(show_passwords);
+            passwords.print_all(show_passwords, color);
         } else {
             println!("No passwords found!")
         }

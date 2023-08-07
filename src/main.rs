@@ -1,4 +1,5 @@
 use clap::Parser;
+use colored::*;
 use lockbox::cli::{
     args::{Args, Command},
     commands::{
@@ -32,7 +33,7 @@ fn main() {
             };
             match add_password(file_name, service, username, master, password) {
                 Ok(_) => (),
-                Err(err) => eprintln!("Error: {}", err),
+                Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
             }
         }
         Command::Generate {
@@ -49,7 +50,7 @@ fn main() {
             show_passwords,
         } => match list_passwords(file_name, master, show_passwords) {
             Ok(_) => (),
-            Err(err) => eprintln!("Error: {}", err),
+            Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
         },
         Command::Remove {
             file_name,
@@ -58,7 +59,7 @@ fn main() {
             master,
         } => match remove_password(file_name, service, username, master) {
             Ok(_) => println!("Password removed successfully"),
-            Err(err) => eprintln!("Error: {}", err),
+            Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
         },
         Command::Show {
             file_name,
@@ -67,7 +68,7 @@ fn main() {
             master,
         } => match show_password(file_name, service, username, master) {
             Ok(_) => (),
-            Err(err) => eprintln!("Error: {}", err),
+            Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
         },
     }
 }
