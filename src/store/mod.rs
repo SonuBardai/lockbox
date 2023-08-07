@@ -315,7 +315,10 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut store =
             PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
+                .unwrap()
+                .load_passwords() // Load existing passwords
                 .unwrap();
+
         // Create a sample password to add
         let password = PasswordEntry::new(
             "service1".to_string(),
