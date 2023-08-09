@@ -2,11 +2,9 @@ use clap::Parser;
 use colored::*;
 use lockbox::cli::{
     args::{Args, Command},
-    commands::{
-        add_password, generate_password, get_random_password, list_passwords, remove_password,
-        show_password,
-    },
+    commands::{add_password, generate_password, list_passwords, remove_password, show_password},
 };
+use passwords::PasswordGenerator;
 
 fn main() {
     let args = Args::parse();
@@ -24,14 +22,22 @@ fn main() {
             lowercase,
             numbers,
         } => {
-            let password = if generate {
-                Some(get_random_password(
-                    length, symbols, uppercase, lowercase, numbers,
-                ))
-            } else {
-                password
-            };
-            match add_password(file_name, service, username, master, password) {
+            let password_generator = PasswordGenerator::new()
+                .length(length.get_val())
+                .lowercase_letters(lowercase)
+                .uppercase_letters(uppercase)
+                .numbers(numbers)
+                .symbols(symbols)
+                .strict(true);
+            match add_password(
+                file_name,
+                service,
+                username,
+                master,
+                password,
+                generate,
+                password_generator,
+            ) {
                 Ok(_) => (),
                 Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
             }

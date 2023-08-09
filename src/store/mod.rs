@@ -36,7 +36,7 @@ impl PasswordStore {
         Ok(store)
     }
 
-    pub fn load_passwords(mut self) -> anyhow::Result<Self> {
+    pub fn load(mut self) -> anyhow::Result<Self> {
         let encrypted_file = std::fs::read(&self.file_name)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
@@ -51,7 +51,7 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn store_passwords(self) -> anyhow::Result<Self> {
+    pub fn dump(self) -> anyhow::Result<Self> {
         let encrypted_file = std::fs::read(&self.file_name)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
@@ -67,7 +67,7 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn add_password(
+    pub fn push(
         mut self,
         service: String,
         username: Option<String>,
@@ -82,7 +82,7 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn remove_password(mut self, service: String, username: Option<String>) -> Self {
+    pub fn pop(mut self, service: String, username: Option<String>) -> Self {
         if let Some(_password) = self
             .passwords
             .as_mut()
@@ -95,17 +95,13 @@ impl PasswordStore {
         self
     }
 
-    pub fn find_password(
-        &self,
-        service: String,
-        username: Option<String>,
-    ) -> Option<&PasswordEntry> {
+    pub fn find(&self, service: String, username: Option<String>) -> Option<&PasswordEntry> {
         self.passwords
             .as_ref()
             .and_then(|passwords| passwords.find(service, username))
     }
 
-    pub fn print_passwords(&self, show_passwords: bool, color: Option<Color>) {
+    pub fn print(&self, show_passwords: bool, color: Option<Color>) {
         if let Some(passwords) = self.passwords.as_ref() {
             passwords.print_all(show_passwords, color);
         } else {
@@ -181,7 +177,7 @@ mod tests {
         let mut store =
             PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
                 .unwrap()
-                .load_passwords()
+                .load()
                 .unwrap();
         test_passwords.iter().for_each(|test_password| {
             store
@@ -271,11 +267,10 @@ mod tests {
         let mut store =
             PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
                 .unwrap()
-                .load_passwords()
+                .load()
                 .unwrap();
         store.passwords = Some(test_passwords.into());
-        let found_password =
-            store.find_password(service.to_string(), username.map(|u| u.to_string()));
+        let found_password = store.find(service.to_string(), username.map(|u| u.to_string()));
         assert_eq!(found_password.is_some(), expect_password_found);
         if let Some(found_password) = found_password {
             assert_eq!(found_password.service, service);
