@@ -29,7 +29,7 @@ pub fn add_password(
     let password = if generate {
         let password = password_generator
             .generate_one()
-            .expect(&format!("{}", "Failed to generate password".red()));
+            .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
         if copy_to_clipboard(password.clone()).is_ok() {
             println!("Random password generated and copied to clipboard");
         } else {
