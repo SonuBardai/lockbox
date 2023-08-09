@@ -1,6 +1,6 @@
 use clap::Parser;
 use colored::*;
-use lockbox::cli::{
+use lock_box::cli::{
     args::{Args, Command},
     commands::{
         add_password, generate_password, get_random_password, list_passwords, remove_password,
