@@ -182,6 +182,7 @@ pub enum Command {
         #[clap(short, long)]
         master: Option<String>,
     },
+    Repl,
 }
 
 #[cfg(test)]
