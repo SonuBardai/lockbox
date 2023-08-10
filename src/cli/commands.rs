@@ -7,10 +7,10 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 use colored::*;
 use passwords::PasswordGenerator;
 
-fn copy_to_clipboard(password: &str) -> anyhow::Result<()> {
+fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
     let mut ctx = ctx_result.map_err(|_| anyhow!("Unable to initialize clipboard"))?;
-    ctx.set_contents(password.to_owned())
+    ctx.set_contents(password)
         .map_err(|_| anyhow!("Unable to set clipboard contents"))?;
     Ok(())
 }
@@ -21,11 +21,16 @@ pub fn add_password(
     username: Option<String>,
     master: Option<String>,
     password: Option<String>,
+    generate: bool,
+    password_generator: PasswordGenerator,
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
-    let password_store = PasswordStore::new(file_name, master)?.load_passwords()?;
-    let password = if let Some(password) = password {
-        if copy_to_clipboard(&password).is_ok() {
+    let password_store = PasswordStore::new(file_name, master)?.load()?;
+    let password = if generate {
+        let password = password_generator
+            .generate_one()
+            .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
+        if copy_to_clipboard(password.clone()).is_ok() {
             println!("Random password generated and copied to clipboard");
         } else {
             println!("Random password generated");
@@ -33,30 +38,10 @@ pub fn add_password(
         }
         password
     } else {
-        read_input("password")
+        password.unwrap_or_else(|| read_input("password"))
     };
-    password_store
-        .add_password(service, username, password)?
-        .store_passwords()?;
+    password_store.push(service, username, password)?.dump()?;
     Ok(())
-}
-
-pub fn get_random_password(
-    length: Length,
-    symbols: bool,
-    uppercase: bool,
-    lowercase: bool,
-    numbers: bool,
-) -> String {
-    PasswordGenerator::new()
-        .length(length.get_val())
-        .lowercase_letters(lowercase)
-        .uppercase_letters(uppercase)
-        .numbers(numbers)
-        .symbols(symbols)
-        .strict(true)
-        .generate_one()
-        .unwrap()
 }
 
 pub fn generate_password(
@@ -87,7 +72,7 @@ pub fn generate_password(
     } else {
         match password_generator.generate_one() {
             Ok(password) => {
-                if copy_to_clipboard(&password).is_ok() {
+                if copy_to_clipboard(password.clone()).is_ok() {
                     println!("{} (Copied to Clipboard)", password.green());
                 } else {
                     println!("{}", password.green());
@@ -106,8 +91,8 @@ pub fn show_password(
     master: Option<String>,
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
-    let passwords = PasswordStore::new(file_name, master)?.load_passwords()?;
-    let password = passwords.find_password(service, username);
+    let passwords = PasswordStore::new(file_name, master)?.load()?;
+    let password = passwords.find(service, username);
     if let Some(password) = password {
         password.print_password(Some(Color::Blue));
     } else {
@@ -123,8 +108,8 @@ pub fn list_passwords(
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(file_name, master)?
-        .load_passwords()?
-        .print_passwords(show_passwords, Some(Color::Blue));
+        .load()?
+        .print(show_passwords, Some(Color::Blue));
     Ok(())
 }
 
@@ -136,8 +121,8 @@ pub fn remove_password(
 ) -> anyhow::Result<()> {
     let master = master.unwrap_or_else(|| read_input("master password"));
     PasswordStore::new(file_name, master)?
-        .load_passwords()?
-        .remove_password(service, username)
-        .store_passwords()?;
+        .load()?
+        .pop(service, username)
+        .dump()?;
     Ok(())
 }
