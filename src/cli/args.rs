@@ -2,7 +2,7 @@ use clap::{builder::PossibleValue, Parser, ValueEnum};
 use std::fmt::Display;
 use terminal_size::{terminal_size, Height, Width};
 
-const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
+pub const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
 const ABOUT: &str = "A password manager and generator";
 const ASCII_ART_ABOUT: &str =
     "\n\n\n\n                                                                                
@@ -136,6 +136,7 @@ pub enum Command {
         #[clap(short, long)]
         master: Option<String>,
     },
+    Repl,
 }
 
 #[cfg(test)]
