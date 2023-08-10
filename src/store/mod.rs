@@ -4,7 +4,7 @@ use crate::{
     pass::Passwords,
 };
 use aes_gcm::aead::Aead;
-use colored::Color;
+use colored::{Color, Colorize};
 use std::fs;
 use std::path::Path;
 
@@ -88,9 +88,9 @@ impl PasswordStore {
             .as_mut()
             .and_then(|passwords| passwords.remove(service, username))
         {
-            println!("Password deleted");
+            println!("{}", "Password deleted".green());
         } else {
-            println!("Password not found")
+            println!("{}", "Password not found".bright_yellow())
         }
         self
     }
