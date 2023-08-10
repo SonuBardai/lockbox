@@ -15,13 +15,50 @@ pub fn repl() {
     let mut password_store = PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME.to_string(), master)
         .unwrap_or_else(|_| panic!("{}", "Failed to initialize password store".red()));
     loop {
-        println!("\nEnter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit");
+        let message = [
+            format!("[{}] {} password", "1".green().bold(), "add".green().bold()),
+            format!(
+                "[{}] {} random password",
+                "2".green().bold(),
+                "generate".green().bold()
+            ),
+            format!(
+                "[{}] {} passwords",
+                "3".green().bold(),
+                "list".green().bold()
+            ),
+            format!(
+                "[{}] {} password",
+                "4".green().bold(),
+                "remove".green().bold()
+            ),
+            format!(
+                "[{}] {} password",
+                "5".green().bold(),
+                "show".green().bold()
+            ),
+            format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
+        ];
+        let message = message.join(" ");
+        println!("\nEnter {message}");
         let input = read_terminal_input(None);
         match input.as_str() {
             "1" | "add" | "a" => {
-                println!(
-                    "Enter [1] randomly generate password [2] add your own password [3] cancel"
-                );
+                let message = [
+                    format!(
+                        "[{}] {} random password",
+                        "1".green().bold(),
+                        "generate".green().bold()
+                    ),
+                    format!(
+                        "[{}] {} your own password",
+                        "2".green().bold(),
+                        "enter".green().bold()
+                    ),
+                    format!("[{}] {}", "3".green().bold(), "cancel".green().bold()),
+                ];
+                let message = message.join(" ");
+                println!("{}", message);
                 let input = read_terminal_input(None);
                 let password = match input.as_str() {
                     "1" | "generate" | "g" | "random" | "r" => {
@@ -42,7 +79,7 @@ pub fn repl() {
                         password
                     }
                     "2" | "enter" | "e" => read_hidden_input("password"),
-                    _ => continue,
+                    "cancel" | "c" | _ => continue,
                 };
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
