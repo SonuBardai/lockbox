@@ -11,7 +11,7 @@ To use Rust Password Manager, first make sure you have Rust installed on your sy
 
 Once you’ve built the project, you can run it using cargo run. Here’s an overview of the available commands:
 
-<img src="https://i.imgur.com/C8aJOMu.png" alt="Lockbox" width="100%">
+<img src="https://i.imgur.com/PIj6o1h.png" alt="Lockbox" width="100%">
 
 ```rust
 Usage: lockbox <COMMAND>
