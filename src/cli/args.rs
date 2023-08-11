@@ -54,7 +54,11 @@ fn get_about(terminal_size: Option<(Width, Height)>) -> String {
             )
         } else {
             let max_line_length = ABOUT.lines().map(|line| line.len()).max().unwrap_or(0);
-            let indent = (w as usize - max_line_length) / 2;
+            let indent = if max_line_length > w as usize {
+                0
+            } else {
+                (w as usize - max_line_length) / 2
+            };
             let indented_about: String = ABOUT
                 .bold()
                 .lines()
@@ -64,7 +68,7 @@ fn get_about(terminal_size: Option<(Width, Height)>) -> String {
             indented_about.bold().to_string()
         }
     } else {
-        ABOUT.to_string()
+        ABOUT.bold().to_string()
     }
 }
 
@@ -297,7 +301,14 @@ mod test {
         case(None, ABOUT.to_string())
     )]
     fn test_get_about(input: Option<(Width, Height)>, expected: String) {
-        assert_eq!(get_about(input), expected);
+        fn reverse_indentation(input: &str) -> String {
+            input
+                .lines()
+                .map(|line| line.trim_start())
+                .collect::<Vec<&str>>()
+                .join("\n")
+        }
+        assert_eq!(reverse_indentation(get_about(input).as_str()), expected);
     }
 
     #[rstest(
