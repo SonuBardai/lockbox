@@ -79,7 +79,7 @@ pub fn repl() {
                         password
                     }
                     "2" | "enter" | "e" => read_hidden_input("password"),
-                    "cancel" | "c" | _ => continue,
+                    _ => continue,
                 };
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
@@ -144,7 +144,7 @@ pub fn repl() {
                     println!("Password not found");
                 }
             }
-            "6" | "exit" | "e" | _ => break,
+            _ => break,
         }
     }
 }
