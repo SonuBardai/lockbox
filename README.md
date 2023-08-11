@@ -22,10 +22,8 @@ Commands:
   list      
   remove    
   show      
+  repl      
   help      Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help  Print help
 ```
 For example, to generate a new password with default properties, you can run cargo run -- generate.
 
