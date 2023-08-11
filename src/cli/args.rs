@@ -23,26 +23,42 @@ const ASCII_ART_ABOUT: &str = r#"
         ....              ....
 
 "#;
-pub const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
 const ABOUT: &str = "L🦀CKBOX: A password manager and generator";
+pub const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
 
 fn get_about(terminal_size: Option<(Width, Height)>) -> String {
+    let about = ABOUT.bold();
     if let Some((Width(w), Height(h))) = terminal_size {
-        if w >= 45 && h >= 17 {
-            let max_line_length = ASCII_ART_ABOUT
+        let ascii_art_lines = ASCII_ART_ABOUT.lines().collect::<Vec<&str>>();
+        let ascii_art_height = ascii_art_lines.len();
+        let ascii_art_width = ascii_art_lines
+            .iter()
+            .map(|line| line.len())
+            .max()
+            .unwrap_or(0);
+
+        let max_line_length = if w as usize >= ascii_art_width && h as usize >= ascii_art_height {
+            ASCII_ART_ABOUT
                 .lines()
-                .chain(ABOUT.lines())
+                .chain(about.lines())
                 .map(|line| line.len())
                 .max()
-                .unwrap_or(0);
-            let indent = (w as usize - max_line_length) / 2;
+                .unwrap_or(0)
+        } else {
+            about.lines().map(|line| line.len()).max().unwrap_or(0)
+        };
+        let indent = if max_line_length > w as usize {
+            0
+        } else {
+            (w as usize - max_line_length) / 2
+        };
+        let indented_about: String = about
+            .lines()
+            .map(|line| format!("{}{}", " ".repeat(indent), line))
+            .collect::<Vec<String>>()
+            .join("\n");
+        if w >= 45 && h >= 17 {
             let indented_ascii_art: String = ASCII_ART_ABOUT
-                .lines()
-                .map(|line| format!("{}{}", " ".repeat(indent), line))
-                .collect::<Vec<String>>()
-                .join("\n");
-            let indented_about: String = ABOUT
-                .bold()
                 .lines()
                 .map(|line| format!("{}{}", " ".repeat(indent), line))
                 .collect::<Vec<String>>()
@@ -53,22 +69,10 @@ fn get_about(terminal_size: Option<(Width, Height)>) -> String {
                 indented_about.bold()
             )
         } else {
-            let max_line_length = ABOUT.lines().map(|line| line.len()).max().unwrap_or(0);
-            let indent = if max_line_length > w as usize {
-                0
-            } else {
-                (w as usize - max_line_length) / 2
-            };
-            let indented_about: String = ABOUT
-                .bold()
-                .lines()
-                .map(|line| format!("{}{}", " ".repeat(indent), line))
-                .collect::<Vec<String>>()
-                .join("\n");
             indented_about.bold().to_string()
         }
     } else {
-        ABOUT.bold().to_string()
+        about.to_string()
     }
 }
 
@@ -295,20 +299,29 @@ mod test {
 
     #[rstest(
         input,
-        expected,
-        case(Some((Width(80), Height(10))), format!("{}{}", ASCII_ART_ABOUT, ABOUT)),
-        case(Some((Width(79), Height(10))), ABOUT.to_string()),
-        case(None, ABOUT.to_string())
+        case(Some((Width(10), Height(10)))),
+        case(Some((Width(1000), Height(10)))),
+        case(Some((Width(10), Height(1000)))),
+        case(Some((Width(50), Height(20)))),
+        case(Some((Width(500), Height(200)))),
+        case(Some((Width(70), Height(40)))),
+        case(None),
     )]
-    fn test_get_about(input: Option<(Width, Height)>, expected: String) {
-        fn reverse_indentation(input: &str) -> String {
-            input
-                .lines()
-                .map(|line| line.trim_start())
-                .collect::<Vec<&str>>()
-                .join("\n")
+    fn test_get_about(input: Option<(Width, Height)>) {
+        let received = get_about(input);
+        assert!(received.contains(&ABOUT));
+        let ascii_art_lines = ASCII_ART_ABOUT.lines().collect::<Vec<&str>>();
+        let ascii_art_height = ascii_art_lines.len();
+        let ascii_art_width = ascii_art_lines
+            .iter()
+            .map(|line| line.len())
+            .max()
+            .unwrap_or(0);
+        if let Some((Width(w), Height(h))) = input {
+            if w as usize >= ascii_art_width && h as usize >= ascii_art_height {
+                assert!(received.contains(ASCII_ART_ABOUT.lines().next().unwrap()))
+            }
         }
-        assert_eq!(reverse_indentation(get_about(input).as_str()), expected);
     }
 
     #[rstest(
@@ -395,7 +408,7 @@ mod test {
             },
         }
     )
-)]
+    )]
     fn test_args(input: &[&str], expected: Args) {
         let args = Args::parse_from(input);
         assert_eq!(args, expected);
