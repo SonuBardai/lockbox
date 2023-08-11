@@ -20,14 +20,10 @@ pub fn repl() {
                 return;
             }
         };
-    loop {
-        if let Err(err) = password_store.load() {
-            eprintln!("Failed to load password store: {}", err);
-            let master = read_hidden_input("master password");
-            password_store.update_master(master);
-        } else {
-            break;
-        }
+    while let Err(err) = password_store.load() {
+        eprintln!("{}: {err}", "Failed to load password store".red());
+        let master = read_hidden_input("master password");
+        password_store.update_master(master);
     }
     loop {
         let message = [
