@@ -11,29 +11,9 @@ To use Rust Password Manager, first make sure you have Rust installed on your sy
 
 Once you’ve built the project, you can run it using cargo run. Here’s an overview of the available commands:
 
-```
-                                               
-                  ..7J?..   ..^JJ7..
-              :~~JPG5PB5PG ~#PPBBGGG5~~:
-              ?&J?JPPY7:J& !@7~?##5??5&BJ
-          :!PP5~JPB#57#GY ^PYJ7G#B77Y5GB!:
-          7@BP555PPG#&Y^     ^JPBBP5555P@7
-          :?##BGGGG7^^         ^~~5GGBBB?^
-          7&P5P&?    .. .......    7@BPP&7
-          .^5PGGG5~5PY5BB55GBG5G5~5PPBG5^.
-              ~J!5BGJ77JGP??5GP7YPGBBBY~
-      ^5BPPPPY5P5YY55J!7775Y77?5PGGPPPPBP~.
-      .^YG5JPGB#@#BBGP5555555555PGGB#@#BGGYY@G?.
-      7&Y:!?5&@&BB#@BBBPPPPPPPPPGB#&&B&@&5?75J5&:
-      7@^ !JPBBGGGGGBGGBBBBBBBBBB##GPGGBB5#P  !#:
-      7@^ GB5JP#:................... .BGJ5#P   .
-      :!. P#B7JP5!.                .~5PJ7B#Y
-          7@.!GPGP?:            :7PGPG7.@?
-          :~ :!PGG&~            !&BGG7: ~:
-              ....              ....
-      
-      L🦀CKBOX: A password manager and generator
+<img src="https://i.imgur.com/C8aJOMu.png" alt="Lockbox" width="100%">
 
+```rust
 Usage: lockbox <COMMAND>
 
 Commands:
