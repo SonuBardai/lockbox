@@ -1,21 +1,67 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
+use colored::Colorize;
 use std::fmt::Display;
 use terminal_size::{terminal_size, Height, Width};
+const ASCII_ART_ABOUT: &str = r#"
+            ..7J?..   ..^JJ7..
+        :~~JPG5PB5PG ~#PPBBGGG5~~:
+        ?&J?JPPY7:J& !@7~?##5??5&BJ
+    :!PP5~JPB#57#GY ^PYJ7G#B77Y5GB!:
+    7@BP555PPG#&Y^     ^JPBBP5555P@7
+    :?##BGGGG7^^         ^~~5GGBBB?^
+    7&P5P&?    .. .......    7@BPP&7
+    .^5PGGG5~5PY5BB55GBG5G5~5PPBG5^.
+        ~J!5BGJ77JGP??5GP7YPGBBBY~
+^5BPPPPY5P5YY55J!7775Y77?5PGGPPPPBP~.
+.^YG5JPGB#@#BBGP5555555555PGGB#@#BGGYY@G?.
+7&Y:!?5&@&BB#@BBBPPPPPPPPPGB#&&B&@&5?75J5&:
+7@^ !JPBBGGGGGBGGBBBBBBBBBB##GPGGBB5#P  !#:
+7@^ GB5JP#:................... .BGJ5#P   .
+:!. P#B7JP5!.                .~5PJ7B#Y
+    7@.!GPGP?:            :7PGPG7.@?
+    :~ :!PGG&~            !&BGG7: ~:
+        ....              ....
 
-const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
-const ABOUT: &str = "A password manager and generator";
-const ASCII_ART_ABOUT: &str =
-    "\n\n\n\n                                                                                
-@(        🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@     
-@(        🦀      🦀  @@        @@@@@@@    @. @@@    @@    @@     @&        
-@@@@@@@@  🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@\n\n\n\n";
+"#;
+pub const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
+const ABOUT: &str = "L🦀CKBOX: A password manager and generator";
 
 fn get_about(terminal_size: Option<(Width, Height)>) -> String {
     if let Some((Width(w), Height(h))) = terminal_size {
-        if w >= 80 && h >= 10 {
-            format!("{}{}", ASCII_ART_ABOUT, ABOUT)
+        if w >= 45 && h >= 17 {
+            let max_line_length = ASCII_ART_ABOUT
+                .lines()
+                .chain(ABOUT.lines())
+                .map(|line| line.len())
+                .max()
+                .unwrap_or(0);
+            let indent = (w as usize - max_line_length) / 2;
+            let indented_ascii_art: String = ASCII_ART_ABOUT
+                .lines()
+                .map(|line| format!("{}{}", " ".repeat(indent), line))
+                .collect::<Vec<String>>()
+                .join("\n");
+            let indented_about: String = ABOUT
+                .bold()
+                .lines()
+                .map(|line| format!("{}{}", " ".repeat(indent), line))
+                .collect::<Vec<String>>()
+                .join("\n");
+            format!(
+                "{}\n{}",
+                indented_ascii_art.bright_red(),
+                indented_about.bold()
+            )
         } else {
-            ABOUT.to_string()
+            let max_line_length = ABOUT.lines().map(|line| line.len()).max().unwrap_or(0);
+            let indent = (w as usize - max_line_length) / 2;
+            let indented_about: String = ABOUT
+                .bold()
+                .lines()
+                .map(|line| format!("{}{}", " ".repeat(indent), line))
+                .collect::<Vec<String>>()
+                .join("\n");
+            indented_about.bold().to_string()
         }
     } else {
         ABOUT.to_string()
