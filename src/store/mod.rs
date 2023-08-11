@@ -108,6 +108,11 @@ impl PasswordStore {
             println!("No passwords found!")
         }
     }
+
+    pub fn update_master(&mut self, new_master_password: String) -> &mut Self {
+        self.master_password = new_master_password;
+        self
+    }
 }
 
 #[cfg(test)]

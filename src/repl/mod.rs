@@ -12,8 +12,23 @@ use passwords::PasswordGenerator;
 pub fn repl() {
     println!("Welcome to L🦀CKBOX!\n");
     let master = read_hidden_input("master password");
-    let mut password_store = PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME.to_string(), master)
-        .unwrap_or_else(|_| panic!("{}", "Failed to initialize password store".red()));
+    let mut password_store: PasswordStore =
+        match PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME.to_string(), master) {
+            Ok(password_store) => password_store,
+            Err(err) => {
+                eprintln!("{}: {}", "Failed to initialize password store".red(), err);
+                return;
+            }
+        };
+    loop {
+        if let Err(err) = password_store.load() {
+            eprintln!("Failed to load password store: {}", err);
+            let master = read_hidden_input("master password");
+            password_store.update_master(master);
+        } else {
+            break;
+        }
+    }
     loop {
         let message = [
             format!("[{}] {} password", "1".green().bold(), "add".green().bold()),
@@ -62,7 +77,7 @@ pub fn repl() {
                 let input = read_terminal_input(None);
                 let password = match input.as_str() {
                     "1" | "generate" | "g" | "random" | "r" => {
-                        let password = PasswordGenerator::new()
+                        let password = if let Ok(password) = PasswordGenerator::new()
                             .length(Length::Sixteen.get_val())
                             .lowercase_letters(true)
                             .uppercase_letters(true)
@@ -70,7 +85,12 @@ pub fn repl() {
                             .symbols(false)
                             .strict(true)
                             .generate_one()
-                            .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
+                        {
+                            password
+                        } else {
+                            eprintln!("{}", "Failed to initialize password store".red());
+                            continue;
+                        };
                         if copy_to_clipboard(password.clone()).is_ok() {
                             println!("{} (Copied to clipboard)", password.green())
                         } else {
@@ -86,17 +106,24 @@ pub fn repl() {
                 let username = Option::from(username).filter(|s| !s.is_empty());
                 password_store
                     .load()
-                    .unwrap_or_else(|_| panic!("{}", "Failed to load passwords to store".red()))
+                    .unwrap_or_else(|err| {
+                        panic!("{}: {err}", "Failed to load passwords to store".red())
+                    })
                     .push(service, username, password)
-                    .unwrap_or_else(|_| panic!("{}", "Failed to new password to store".red()))
+                    .unwrap_or_else(|err| {
+                        panic!("{}: {err}", "Failed to new password to store".red())
+                    })
                     .dump()
-                    .unwrap_or_else(|_| {
-                        panic!("{}", "Failed to dump updated passwords to store".red())
+                    .unwrap_or_else(|err| {
+                        panic!(
+                            "{}: {err}",
+                            "Failed to dump updated passwords to store".red()
+                        )
                     });
                 println!("{}", "Password added successfully".green());
             }
             "2" | "generate" | "g" => {
-                let password = PasswordGenerator::new()
+                let password = if let Ok(password) = PasswordGenerator::new()
                     .length(Length::Sixteen.get_val())
                     .lowercase_letters(true)
                     .uppercase_letters(true)
@@ -104,7 +131,12 @@ pub fn repl() {
                     .symbols(false)
                     .strict(true)
                     .generate_one()
-                    .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
+                {
+                    password
+                } else {
+                    eprintln!("{}", "Failed to initialize password store".red());
+                    continue;
+                };
                 if copy_to_clipboard(password.clone()).is_ok() {
                     println!("{} (Copied to clipboard)", password.green())
                 } else {
@@ -114,7 +146,9 @@ pub fn repl() {
             "3" | "list" | "l" => {
                 password_store
                     .load()
-                    .unwrap_or_else(|_| panic!("{}", "Failed to load passwords to store".red()))
+                    .unwrap_or_else(|err| {
+                        panic!("{}: {err}", "Failed to load passwords to store".red())
+                    })
                     .print(true, Some(Color::Blue));
             }
             "4" | "remove" | "r" => {
@@ -123,11 +157,16 @@ pub fn repl() {
                 let username = Option::from(username).filter(|s| !s.is_empty());
                 password_store
                     .load()
-                    .unwrap_or_else(|_| panic!("{}", "Failed to load passwords to store".red()))
+                    .unwrap_or_else(|err| {
+                        panic!("{}: {err}", "Failed to load passwords to store".red())
+                    })
                     .pop(service, username)
                     .dump()
-                    .unwrap_or_else(|_| {
-                        panic!("{}", "Failed to dump updated passwords to store".red())
+                    .unwrap_or_else(|err| {
+                        panic!(
+                            "{}: {err}",
+                            "Failed to dump updated passwords to store".red()
+                        )
                     });
             }
             "5" | "show" | "s" => {
@@ -136,7 +175,9 @@ pub fn repl() {
                 let username = Option::from(username).filter(|s| !s.is_empty());
                 let password = password_store
                     .load()
-                    .unwrap_or_else(|_| panic!("{}", "Failed to load passwords to store".red()))
+                    .unwrap_or_else(|err| {
+                        panic!("{}: {err}", "Failed to load passwords to store".red())
+                    })
                     .find(service, username);
                 if let Some(password) = password {
                     password.print_password(Some(Color::Blue));
