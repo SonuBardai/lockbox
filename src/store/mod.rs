@@ -4,7 +4,7 @@ use crate::{
     pass::Passwords,
 };
 use aes_gcm::aead::Aead;
-use colored::Color;
+use colored::{Color, Colorize};
 use std::fs;
 use std::path::Path;
 
@@ -36,7 +36,7 @@ impl PasswordStore {
         Ok(store)
     }
 
-    pub fn load(mut self) -> anyhow::Result<Self> {
+    pub fn load(&mut self) -> anyhow::Result<&mut Self> {
         let encrypted_file = std::fs::read(&self.file_name)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
@@ -51,7 +51,7 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn dump(self) -> anyhow::Result<Self> {
+    pub fn dump(&mut self) -> anyhow::Result<&mut Self> {
         let encrypted_file = std::fs::read(&self.file_name)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
@@ -68,11 +68,11 @@ impl PasswordStore {
     }
 
     pub fn push(
-        mut self,
+        &mut self,
         service: String,
         username: Option<String>,
         password: String,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow::Result<&mut Self> {
         let new_password = PasswordEntry::new(service, username, password);
         if let Some(ref mut passwords) = self.passwords {
             passwords.append(new_password);
@@ -82,15 +82,15 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn pop(mut self, service: String, username: Option<String>) -> Self {
+    pub fn pop(&mut self, service: String, username: Option<String>) -> &mut Self {
         if let Some(_password) = self
             .passwords
             .as_mut()
             .and_then(|passwords| passwords.remove(service, username))
         {
-            println!("Password deleted");
+            println!("{}", "Password deleted".green());
         } else {
-            println!("Password not found")
+            println!("{}", "Password not found".bright_yellow())
         }
         self
     }
@@ -107,6 +107,11 @@ impl PasswordStore {
         } else {
             println!("No passwords found!")
         }
+    }
+
+    pub fn update_master(&mut self, new_master_password: String) -> &mut Self {
+        self.master_password = new_master_password;
+        self
     }
 }
 
@@ -176,9 +181,8 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut store =
             PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap()
-                .load()
                 .unwrap();
+        store.load().unwrap();
         test_passwords.iter().for_each(|test_password| {
             store
                 .passwords
@@ -266,9 +270,8 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut store =
             PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap()
-                .load()
                 .unwrap();
+        store.load().unwrap();
         store.passwords = Some(test_passwords.into());
         let found_password = store.find(service.to_string(), username.map(|u| u.to_string()));
         assert_eq!(found_password.is_some(), expect_password_found);

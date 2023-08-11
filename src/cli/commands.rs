@@ -1,5 +1,5 @@
 use crate::{
-    cli::{args::Length, io::read_input},
+    cli::{args::Length, io::read_hidden_input},
     store::PasswordStore,
 };
 use anyhow::anyhow;
@@ -7,7 +7,7 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 use colored::*;
 use passwords::PasswordGenerator;
 
-fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
+pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
     let mut ctx = ctx_result.map_err(|_| anyhow!("Unable to initialize clipboard"))?;
     ctx.set_contents(password)
@@ -24,8 +24,8 @@ pub fn add_password(
     generate: bool,
     password_generator: PasswordGenerator,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_input("master password"));
-    let password_store = PasswordStore::new(file_name, master)?.load()?;
+    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+    let mut password_store = PasswordStore::new(file_name, master)?;
     let password = if generate {
         let password = password_generator
             .generate_one()
@@ -38,9 +38,12 @@ pub fn add_password(
         }
         password
     } else {
-        password.unwrap_or_else(|| read_input("password"))
+        password.unwrap_or_else(|| read_hidden_input("password"))
     };
-    password_store.push(service, username, password)?.dump()?;
+    password_store
+        .load()?
+        .push(service, username, password)?
+        .dump()?;
     Ok(())
 }
 
@@ -90,9 +93,9 @@ pub fn show_password(
     username: Option<String>,
     master: Option<String>,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_input("master password"));
-    let passwords = PasswordStore::new(file_name, master)?.load()?;
-    let password = passwords.find(service, username);
+    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+    let mut password_store = PasswordStore::new(file_name, master)?;
+    let password = password_store.load()?.find(service, username);
     if let Some(password) = password {
         password.print_password(Some(Color::Blue));
     } else {
@@ -106,7 +109,7 @@ pub fn list_passwords(
     master: Option<String>,
     show_passwords: bool,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_input("master password"));
+    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
     PasswordStore::new(file_name, master)?
         .load()?
         .print(show_passwords, Some(Color::Blue));
@@ -119,7 +122,7 @@ pub fn remove_password(
     username: Option<String>,
     master: Option<String>,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_input("master password"));
+    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
     PasswordStore::new(file_name, master)?
         .load()?
         .pop(service, username)
