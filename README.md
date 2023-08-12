@@ -11,30 +11,20 @@ To use Rust Password Manager, first make sure you have Rust installed on your sy
 
 Once you’ve built the project, you can run it using cargo run. Here’s an overview of the available commands:
 
-```
-@(        🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@     
-@(        🦀     🦀  @@        @@@@@@@    @. @@@    @@    @@     @&        
-@@@@@@@@  🦀🦀🦀🦀🦀  @@@@@@@@  @@     @*  @@@@@@@@  @@@@@@@@  @@@  @@@    
+<img src="https://i.imgur.com/PIj6o1h.png" alt="Lockbox" width="100%">
 
-
-
- 
-A password manager and generator
-
+```rust
 Usage: lockbox <COMMAND>
 
 Commands:
-  add       
-  generate  Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]
-  list      
-  remove    
-  show      
+  add       Add a new password to the password manager
+  generate  Generate a random password.
+  list      List all passwords in the password manager
+  remove    Remove a password from the password manager
+  show      Show a specific password in the password manager
+  repl      Start an interactive REPL session
   help      Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help  Print help
 ```
-For example, to generate a new password with default properties, you can run cargo run -- generate.
 
 ### Working
 [Store](./src/store/README.md)
