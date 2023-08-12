@@ -25,7 +25,6 @@ Commands:
   repl      Start an interactive REPL session
   help      Print this message or the help of the given subcommand(s)
 ```
-For example, to generate a new password with default properties, you can run cargo run -- generate.
 
 ### Working
 [Store](./src/store/README.md)
