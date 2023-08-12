@@ -7,9 +7,9 @@ Lockbox is a command-line tool for generating and managing passwords. It uses st
 [![codecov](https://codecov.io/gh/SonuBardai/lockbox/branch/main/graph/badge.svg?token=XV39653NA5)](https://codecov.io/gh/SonuBardai/lockbox)
 
 ### Usage
-To use Rust Password Manager, first make sure you have Rust installed on your system. Then, clone this repository and run cargo build to build the project.
-
-Once you’ve built the project, you can run it using cargo run. Here’s an overview of the available commands:
+- To use Lockbox, first make sure you have [Rust installed](https://www.rust-lang.org/tools/install) on your system.
+- Then, clone this repository with `git clone git@github.com:SonuBardai/lockbox.git`.
+- You can run it using `cargo run`. Here’s an overview of the available commands:
 
 <img src="https://i.imgur.com/PIj6o1h.png" alt="Lockbox" width="100%">
 
@@ -24,6 +24,36 @@ Commands:
   show      Show a specific password in the password manager
   repl      Start an interactive REPL session
   help      Print this message or the help of the given subcommand(s)
+```
+
+- You can directly trigger the lockbox REPL by running `cargo run`
+```rust
+Welcome to L🦀CKBOX!
+
+Please enter the master password
+>> 
+
+Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit
+>> 1
+[1] generate random password [2] enter your own password [3] cancel
+>> 1
+5NqTd62DSpthlwOO (Copied to clipboard)
+Please enter the service name
+>> github     
+Please enter the username (Optional)
+>> MyAwesomeGithubProfile
+Password added successfully
+
+Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit
+>> show
+Please enter the service name
+>> github
+Please enter the username (Optional)
+>> MyAwesomeGithubProfile
+Password: 5NqTd62DSpthlwOO
+
+Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit
+>> exit
 ```
 
 ### Working
