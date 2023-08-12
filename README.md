@@ -17,12 +17,12 @@ Once you’ve built the project, you can run it using cargo run. Here’s an ove
 Usage: lockbox <COMMAND>
 
 Commands:
-  add       
-  generate  Generate a password with the specified properties [default: length=16, symbols=false, uppercase=true, lowercase=true, numbers=true, count=1]
-  list      
-  remove    
-  show      
-  repl      
+  add       Add a new password to the password manager
+  generate  Generate a random password.
+  list      List all passwords in the password manager
+  remove    Remove a password from the password manager
+  show      Show a specific password in the password manager
+  repl      Start an interactive REPL session
   help      Print this message or the help of the given subcommand(s)
 ```
 For example, to generate a new password with default properties, you can run cargo run -- generate.
