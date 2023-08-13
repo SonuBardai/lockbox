@@ -229,11 +229,7 @@ mod test {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
-        let result = show_password(
-            &mut password_store,
-            service,
-            username.map(|s| s),
-        );
+        let result = show_password(&mut password_store, service, username.map(|s| s));
         assert!(result.is_ok());
     }
 }
