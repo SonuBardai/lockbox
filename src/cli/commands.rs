@@ -138,6 +138,8 @@ pub fn remove_password(
 
 #[cfg(test)]
 mod test {
+    use crate::pass::PasswordEntry;
+
     use super::*;
     use passwords::PasswordGenerator;
     use rstest::rstest;
@@ -259,26 +261,32 @@ mod test {
 
     #[rstest(
         show_passwords,
-        service,
-        username,
-        password,
-        case(false, "service", "username", "password"),
-        case(true, "service", "username", "password")
+        passwords,
+        case(false, vec![]),
+        case(false, vec![("service1", "username1", "password1")]),
+        case(true, vec![("service1", "username1", "password1")]),
+        case(false, vec![("service1", "username1", "password1"), ("service2", "username2", "password2")]),
+        case(true, vec![("service1", "username1", "password1"), ("service2", "username2", "password2")]),
+        case(false, vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")]),
+        case(true, vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")])
     )]
-    fn test_list_passwords(show_passwords: bool, service: &str, username: &str, password: &str) {
+    fn test_list_passwords(show_passwords: bool, passwords: Vec<(&str, &str, &str)>) {
         let master = "master_password".to_string();
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
-        add_password(
-            &mut password_store,
-            service.to_string(),
-            Some(username.to_string()),
-            Some(password.to_string()),
-            false,
-            PasswordGenerator::default(),
-        )
-        .unwrap();
+
+        for (service, username, password) in passwords.iter() {
+            add_password(
+                &mut password_store,
+                service.to_string(),
+                Some(username.to_string()),
+                Some(password.to_string()),
+                false,
+                PasswordGenerator::default(),
+            )
+            .unwrap();
+        }
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
@@ -287,63 +295,85 @@ mod test {
 
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
-        println!("{}", output_str);
-        if show_passwords {
-            assert!(output_str.contains(&format!(
-                "Service: {}, Username: {}, Password: {}",
-                service.blue(),
-                username.blue(),
-                password.blue()
-            )))
-        } else {
-            assert!(output_str.contains(&format!(
-                "Service: {}, Username: {}, Password: {}",
-                service.blue(),
-                username.blue(),
-                "***".blue()
-            )))
+
+        for (service, username, password) in passwords.iter() {
+            if show_passwords {
+                assert!(output_str.contains(&format!(
+                    "Service: {}, Username: {}, Password: {}",
+                    service.blue(),
+                    username.blue(),
+                    password.blue()
+                )))
+            } else {
+                assert!(output_str.contains(&format!(
+                    "Service: {}, Username: {}, Password: {}",
+                    service.blue(),
+                    username.blue(),
+                    "***".blue()
+                )))
+            }
         }
     }
 
-    #[test]
-    fn test_remove_password() {
+    #[rstest(
+    passwords_to_add,
+    password_to_remove,
+    expected_passwords,
+    case(
+        vec![("service1", "username1", "password1")],
+        ("service1", "username1"),
+        vec![]
+    ),
+    case(
+        vec![("service1", "username1", "password1"), ("service2", "username2", "password2")],
+        ("service1", "username1"),
+        vec![("service2", "username2", "password2")]
+    ),
+    case(
+        vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
+        ("service1", "username1"),
+        vec![("service2", "username2", "password2"), ("service3", "username3", "password3")]
+    )
+)]
+    fn test_remove_password(
+        passwords_to_add: Vec<(&str, &str, &str)>,
+        password_to_remove: (&str, &str),
+        expected_passwords: Vec<(&str, &str, &str)>,
+    ) {
         let master = "master_password".to_string();
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
 
-        add_password(
-            &mut password_store,
-            "service1".to_string(),
-            Some("username1".to_string()),
-            Some("password1".to_string()),
-            false,
-            PasswordGenerator::default(),
-        )
-        .unwrap();
-        add_password(
-            &mut password_store,
-            "service2".to_string(),
-            Some("username2".to_string()),
-            Some("password2".to_string()),
-            false,
-            PasswordGenerator::default(),
-        )
-        .unwrap();
+        for (service, username, password) in passwords_to_add.iter() {
+            add_password(
+                &mut password_store,
+                service.to_string(),
+                Some(username.to_string()),
+                Some(password.to_string()),
+                false,
+                PasswordGenerator::default(),
+            )
+            .unwrap();
+        }
 
+        let (service, username) = password_to_remove;
         let result = remove_password(
             &mut password_store,
-            "service1".to_string(),
-            Some("username1".to_string()),
+            service.to_string(),
+            Some(username.to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(
-            password_store.find("service1".to_string(), Some("username1".to_string())),
-            None
-        );
-        assert_ne!(
-            password_store.find("service2".to_string(), Some("username2".to_string())),
-            None
-        )
+
+        for (service, username, password) in expected_passwords.iter() {
+            assert_eq!(
+                password_store.find(service.to_string(), Some(username.to_string())),
+                Some(&PasswordEntry::new(
+                    service.to_string(),
+                    Some(username.to_string()),
+                    password.to_string()
+                ))
+            );
+        }
     }
 }
