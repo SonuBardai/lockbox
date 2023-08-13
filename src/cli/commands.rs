@@ -80,7 +80,7 @@ pub fn generate_password(
         match password_generator.generate_one() {
             Ok(password) => {
                 writeln!(writer, "{}\tRandom password generated", password.green())?;
-                match copy_to_clipboard(password.clone()) {
+                match copy_to_clipboard(password) {
                     Ok(_) => writeln!(writer, "(Copied to clipboard)")?,
                     Err(err) => {
                         writeln!(
