@@ -200,6 +200,7 @@ mod test {
         .unwrap();
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
+        println!("{}", output_str);
         let lines: Vec<&str> = output_str.trim().lines().collect();
         assert_eq!(lines.len(), count);
         if count == 1 {
@@ -218,5 +219,21 @@ mod test {
         assert!(output_str.contains(
             "Error generating password: You need to enable at least one kind of characters."
         ))
+    }
+
+    #[rstest]
+    #[case("service1".to_string(), Some("username1".to_string()))]
+    #[case("service2", None)]
+    fn test_show_password(#[case] service: String, #[case] username: Option<String>) {
+        let master = "master_password".to_string();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+        let result = show_password(
+            &mut password_store,
+            service.to_string(),
+            username.map(|s| s.to_string()),
+        );
+        assert!(result.is_ok());
     }
 }
