@@ -6,8 +6,10 @@ use lockbox::{
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
         },
+        io::read_hidden_input,
     },
     repl::repl,
+    store::PasswordStore,
 };
 use passwords::PasswordGenerator;
 
@@ -37,16 +39,23 @@ fn main() {
                     .numbers(numbers)
                     .symbols(symbols)
                     .strict(true);
+                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let mut password_store = match PasswordStore::new(file_name, master) {
+                    Ok(password_store) => password_store,
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        return;
+                    }
+                };
                 match add_password(
-                    file_name,
+                    &mut password_store,
                     service,
                     username,
-                    master,
                     password,
                     generate,
                     password_generator,
                 ) {
-                    Ok(_) => (),
+                    Ok(_) => println!("{}", "Password added successfully".green()),
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }
             }
@@ -62,28 +71,58 @@ fn main() {
                 file_name,
                 master,
                 show_passwords,
-            } => match list_passwords(file_name, master, show_passwords) {
-                Ok(_) => (),
-                Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
-            },
+            } => {
+                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let mut password_store = match PasswordStore::new(file_name, master) {
+                    Ok(password_store) => password_store,
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        return;
+                    }
+                };
+                match list_passwords(&mut password_store, show_passwords) {
+                    Ok(_) => (),
+                    Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
+                }
+            }
             Command::Remove {
                 file_name,
                 service,
                 username,
                 master,
-            } => match remove_password(file_name, service, username, master) {
-                Ok(_) => println!("Password removed successfully"),
-                Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
-            },
+            } => {
+                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let mut password_store = match PasswordStore::new(file_name, master) {
+                    Ok(password_store) => password_store,
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        return;
+                    }
+                };
+                match remove_password(&mut password_store, service, username) {
+                    Ok(_) => println!("Password removed successfully"),
+                    Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
+                }
+            }
             Command::Show {
                 file_name,
                 service,
                 username,
                 master,
-            } => match show_password(file_name, service, username, master) {
-                Ok(_) => (),
-                Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
-            },
+            } => {
+                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let mut password_store = match PasswordStore::new(file_name, master) {
+                    Ok(password_store) => password_store,
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        return;
+                    }
+                };
+                match show_password(&mut password_store, service, username) {
+                    Ok(_) => (),
+                    Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
+                }
+            }
             Command::Repl => repl(),
         }
     }

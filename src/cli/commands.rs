@@ -16,16 +16,13 @@ pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
 }
 
 pub fn add_password(
-    file_name: String,
+    password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
-    master: Option<String>,
     password: Option<String>,
     generate: bool,
     password_generator: PasswordGenerator,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
-    let mut password_store = PasswordStore::new(file_name, master)?;
     let password = if generate {
         let password = password_generator
             .generate_one()
@@ -88,13 +85,10 @@ pub fn generate_password(
 }
 
 pub fn show_password(
-    file_name: String,
+    password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
-    master: Option<String>,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
-    let mut password_store = PasswordStore::new(file_name, master)?;
     let password = password_store.load()?.find(service, username);
     if let Some(password) = password {
         password.print_password(Some(Color::Blue));
@@ -105,27 +99,20 @@ pub fn show_password(
 }
 
 pub fn list_passwords(
-    file_name: String,
-    master: Option<String>,
+    password_store: &mut PasswordStore,
     show_passwords: bool,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
-    PasswordStore::new(file_name, master)?
+    password_store
         .load()?
         .print(show_passwords, Some(Color::Blue));
     Ok(())
 }
 
 pub fn remove_password(
-    file_name: String,
+    password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
-    master: Option<String>,
 ) -> anyhow::Result<()> {
-    let master = master.unwrap_or_else(|| read_hidden_input("master password"));
-    PasswordStore::new(file_name, master)?
-        .load()?
-        .pop(service, username)
-        .dump()?;
+    password_store.load()?.pop(service, username).dump()?;
     Ok(())
 }

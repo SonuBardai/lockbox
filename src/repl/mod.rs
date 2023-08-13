@@ -1,7 +1,9 @@
 use crate::{
     cli::{
         args::{Length, DEFAULT_PASSWORD_FILE_NAME},
-        commands::copy_to_clipboard,
+        commands::{
+            add_password, generate_password, list_passwords, remove_password, show_password,
+        },
         io::{read_hidden_input, read_terminal_input},
     },
     store::PasswordStore,
@@ -10,16 +12,19 @@ use colored::*;
 use passwords::PasswordGenerator;
 
 pub fn repl() {
-    println!("Welcome to L🦀CKBOX!\n");
+    println!("{}", "Welcome to L🦀CKBOX!\n".bold());
     let master = read_hidden_input("master password");
-    let mut password_store: PasswordStore =
-        match PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME.to_string(), master) {
-            Ok(password_store) => password_store,
-            Err(err) => {
-                eprintln!("{}: {}", "Failed to initialize password store".red(), err);
-                return;
-            }
-        };
+    let password_store = match PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME.to_string(), master) {
+        Ok(password_store) => password_store,
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
+    };
+    run_repl(password_store);
+}
+
+pub fn run_repl(mut password_store: PasswordStore) {
     while let Err(err) = password_store.load() {
         eprintln!("{}: {err}", "Failed to load password store".red());
         let master = read_hidden_input("master password");
@@ -71,115 +76,62 @@ pub fn repl() {
                 let message = message.join(" ");
                 println!("{}", message);
                 let input = read_terminal_input(None);
-                let password = match input.as_str() {
-                    "1" | "generate" | "g" | "random" | "r" => {
-                        let password = if let Ok(password) = PasswordGenerator::new()
-                            .length(Length::Sixteen.get_val())
-                            .lowercase_letters(true)
-                            .uppercase_letters(true)
-                            .numbers(true)
-                            .symbols(false)
-                            .strict(true)
-                            .generate_one()
-                        {
-                            password
-                        } else {
-                            eprintln!("{}", "Failed to initialize password store".red());
-                            continue;
-                        };
-                        if copy_to_clipboard(password.clone()).is_ok() {
-                            println!("{} (Copied to clipboard)", password.green())
-                        } else {
-                            println!("{}", password.green())
-                        }
-                        password
+                let generate = match input.as_str() {
+                    "1" | "generate" | "g" | "random" | "r" => true,
+                    "2" | "enter" | "e" => false,
+                    _ => {
+                        println!("{}", "Invalid input".red());
+                        continue;
                     }
-                    "2" | "enter" | "e" => read_hidden_input("password"),
-                    _ => continue,
                 };
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
                 let username = Option::from(username).filter(|s| !s.is_empty());
-                password_store
-                    .load()
-                    .unwrap_or_else(|err| {
-                        panic!("{}: {err}", "Failed to load passwords to store".red())
-                    })
-                    .push(service, username, password)
-                    .unwrap_or_else(|err| {
-                        panic!("{}: {err}", "Failed to new password to store".red())
-                    })
-                    .dump()
-                    .unwrap_or_else(|err| {
-                        panic!(
-                            "{}: {err}",
-                            "Failed to dump updated passwords to store".red()
-                        )
-                    });
-                println!("{}", "Password added successfully".green());
-            }
-            "2" | "generate" | "g" => {
-                let password = if let Ok(password) = PasswordGenerator::new()
+                let password_generator = PasswordGenerator::new()
                     .length(Length::Sixteen.get_val())
                     .lowercase_letters(true)
                     .uppercase_letters(true)
                     .numbers(true)
                     .symbols(false)
-                    .strict(true)
-                    .generate_one()
-                {
-                    password
-                } else {
-                    eprintln!("{}", "Failed to initialize password store".red());
-                    continue;
+                    .strict(true);
+                match add_password(
+                    &mut password_store,
+                    service,
+                    username,
+                    None,
+                    generate,
+                    password_generator,
+                ) {
+                    Ok(_) => println!("{}", "Password added successfully".green()),
+                    Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 };
-                if copy_to_clipboard(password.clone()).is_ok() {
-                    println!("{} (Copied to clipboard)", password.green())
-                } else {
-                    println!("{}", password.green())
-                }
+            }
+            "2" | "generate" | "g" => {
+                generate_password(Length::Sixteen, false, true, true, true, 1);
             }
             "3" | "list" | "l" => {
-                password_store
-                    .load()
-                    .unwrap_or_else(|err| {
-                        panic!("{}: {err}", "Failed to load passwords to store".red())
-                    })
-                    .print(true, Some(Color::Blue));
+                list_passwords(&mut password_store, true).unwrap_or_else(|err| {
+                    panic!("{}: {err}", "Failed to load passwords to store".red())
+                });
             }
             "4" | "remove" | "r" => {
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
                 let username = Option::from(username).filter(|s| !s.is_empty());
-                password_store
-                    .load()
-                    .unwrap_or_else(|err| {
-                        panic!("{}: {err}", "Failed to load passwords to store".red())
-                    })
-                    .pop(service, username)
-                    .dump()
-                    .unwrap_or_else(|err| {
-                        panic!(
-                            "{}: {err}",
-                            "Failed to dump updated passwords to store".red()
-                        )
-                    });
+                remove_password(&mut password_store, service, username).unwrap_or_else(|err| {
+                    panic!(
+                        "{}: {err}",
+                        "Failed to dump updated passwords to store".red()
+                    )
+                });
             }
             "5" | "show" | "s" => {
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
                 let username = Option::from(username).filter(|s| !s.is_empty());
-                let password = password_store
-                    .load()
-                    .unwrap_or_else(|err| {
-                        panic!("{}: {err}", "Failed to load passwords to store".red())
-                    })
-                    .find(service, username);
-                if let Some(password) = password {
-                    password.print_password(Some(Color::Blue));
-                } else {
-                    println!("Password not found");
-                }
+                if show_password(&mut password_store, service, username).is_err() {
+                    eprintln!("Password not found");
+                };
             }
             _ => break,
         }
