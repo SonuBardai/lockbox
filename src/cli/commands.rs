@@ -350,6 +350,11 @@ mod test {
         vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
         ("service1", "username1"),
         vec![("service2", "username2", "password2"), ("service3", "username3", "password3")]
+    ),
+    case(
+        vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
+        ("service5", "username5"),
+        vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")]
     )
     )]
     fn test_remove_password(
