@@ -118,9 +118,9 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 };
             }
             "3" | "list" | "l" => {
-                list_passwords(&mut password_store, true).unwrap_or_else(|err| {
-                    panic!("{}: {err}", "Failed to load passwords to store".red())
-                });
+                list_passwords(&mut password_store, true, &mut std::io::stdout()).unwrap_or_else(
+                    |err| panic!("{}: {err}", "Failed to load passwords to store".red()),
+                );
             }
             "4" | "remove" | "r" => {
                 let service = read_terminal_input(Some("Please enter the service name"));

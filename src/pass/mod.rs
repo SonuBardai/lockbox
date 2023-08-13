@@ -50,14 +50,17 @@ impl Passwords {
     pub fn new() -> Self {
         Passwords(vec![])
     }
+
     pub fn append(&mut self, new_password: PasswordEntry) {
         self.0.push(new_password);
     }
+
     pub fn find(&self, service: String, username: Option<String>) -> Option<&PasswordEntry> {
         self.0
             .iter()
             .find(|pwd| pwd.service == service && pwd.username == username)
     }
+
     pub fn remove(&mut self, service: String, username: Option<String>) -> Option<PasswordEntry> {
         if let Some(index) = self
             .0
@@ -69,59 +72,99 @@ impl Passwords {
             None
         }
     }
+
     pub fn parse_passwords(raw_passwords: &str) -> Result<Passwords, anyhow::Error> {
         let passwords: Passwords = serde_json::from_str(raw_passwords)?;
         Ok(passwords)
     }
-    pub fn print_all(&self, show_passwords: bool, color: Option<Color>) {
-        self.0.iter().for_each(|pwd| {
+
+    pub fn print_all(
+        &self,
+        show_passwords: bool,
+        color: Option<Color>,
+        writer: &mut dyn Write,
+    ) -> anyhow::Result<()> {
+        for pwd in self.0.iter() {
             if show_passwords {
                 if let Some(username) = &pwd.username {
                     if let Some(color) = color {
-                        println!(
-                            "Service: {}, Username: {}, Password: {}",
-                            pwd.service.color(color),
-                            username.color(color),
-                            pwd.password.color(color)
-                        )
+                        writeln!(
+                            writer,
+                            "{}",
+                            format!(
+                                "Service: {}, Username: {}, Password: {}",
+                                pwd.service.color(color),
+                                username.color(color),
+                                pwd.password.color(color)
+                            )
+                        )?;
                     } else {
-                        println!(
-                            "Service: {}, Username: {}, Password: {}",
-                            pwd.service, username, pwd.password
-                        )
+                        writeln!(
+                            writer,
+                            "{}",
+                            format!(
+                                "Service: {}, Username: {}, Password: {}",
+                                pwd.service, username, pwd.password
+                            )
+                        )?;
                     }
                 } else if let Some(color) = color {
-                    println!(
-                        "Service: {}, Password: {}",
-                        pwd.service.color(color),
-                        pwd.password.color(color)
-                    )
+                    writeln!(
+                        writer,
+                        "{}",
+                        format!(
+                            "Service: {}, Password: {}",
+                            pwd.service.color(color),
+                            pwd.password.color(color)
+                        )
+                    )?;
                 } else {
-                    println!("Service: {}, Password: {}", pwd.service, pwd.password)
+                    writeln!(
+                        writer,
+                        "{}",
+                        format!("Service: {}, Password: {}", pwd.service, pwd.password)
+                    )?;
                 }
             } else if let Some(username) = &pwd.username {
                 if let Some(color) = color {
-                    println!(
-                        "Service: {}, Username: {}, Password: {}",
-                        pwd.service.color(color),
-                        username.color(color),
-                        "***".color(color)
-                    )
+                    writeln!(
+                        writer,
+                        "{}",
+                        format!(
+                            "Service: {}, Username: {}, Password: {}",
+                            pwd.service.color(color),
+                            username.color(color),
+                            "***".color(color)
+                        )
+                    )?;
                 } else {
-                    println!(
-                        "Service: {}, Username: {}, Password: ***",
-                        pwd.service, username
-                    )
+                    writeln!(
+                        writer,
+                        "{}",
+                        format!(
+                            "Service: {}, Username: {}, Password: ***",
+                            pwd.service, username
+                        )
+                    )?;
                 }
             } else if let Some(color) = color {
-                println!(
-                    "Service: {}, Password: {}",
-                    pwd.service.color(color),
-                    "***".color(color)
-                )
+                writeln!(
+                    writer,
+                    "{}",
+                    format!(
+                        "Service: {}, Password: {}",
+                        pwd.service.color(color),
+                        "***".color(color)
+                    )
+                )?;
             } else {
-                println!("Service: {}, Password: ***", pwd.service)
+                writeln!(
+                    writer,
+                    "{}",
+                    format!("Service: {}, Password: ***", pwd.service)
+                )?;
             }
-        })
+        }
+        Ok(())
     }
 }

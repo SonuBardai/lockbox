@@ -91,7 +91,7 @@ fn main() {
                         return;
                     }
                 };
-                match list_passwords(&mut password_store, show_passwords) {
+                match list_passwords(&mut password_store, show_passwords, &mut std::io::stdout()) {
                     Ok(_) => (),
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }

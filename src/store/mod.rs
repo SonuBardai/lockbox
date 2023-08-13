@@ -6,6 +6,7 @@ use crate::{
 use aes_gcm::aead::Aead;
 use colored::{Color, Colorize};
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 
 pub struct PasswordStore {
@@ -101,9 +102,11 @@ impl PasswordStore {
             .and_then(|passwords| passwords.find(service, username))
     }
 
-    pub fn print(&self, show_passwords: bool, color: Option<Color>) {
+    pub fn print(&self, show_passwords: bool, color: Option<Color>, writer: &mut dyn Write) {
         if let Some(passwords) = self.passwords.as_ref() {
-            passwords.print_all(show_passwords, color);
+            if let Err(err) = passwords.print_all(show_passwords, color, writer) {
+                eprintln!("{}", err);
+            };
         } else {
             println!("No passwords found!")
         }

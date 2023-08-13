@@ -119,10 +119,11 @@ pub fn show_password(
 pub fn list_passwords(
     password_store: &mut PasswordStore,
     show_passwords: bool,
+    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     password_store
         .load()?
-        .print(show_passwords, Some(Color::Blue));
+        .print(show_passwords, Some(Color::Blue), writer);
     Ok(())
 }
 
@@ -254,5 +255,53 @@ mod test {
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains(&password));
+    }
+
+    #[rstest(
+        show_passwords,
+        service,
+        username,
+        password,
+        case(false, "service", "username", "password"),
+        case(true, "service", "username", "password")
+    )]
+    fn test_list_passwords(show_passwords: bool, service: &str, username: &str, password: &str) {
+        let master = "master_password".to_string();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+        add_password(
+            &mut password_store,
+            service.to_string(),
+            Some(username.to_string()),
+            Some(password.to_string()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+
+        let mut output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
+        let result = list_passwords(&mut password_store, show_passwords, &mut writer);
+        assert!(result.is_ok());
+
+        output = writer.into_inner();
+        let output_str = String::from_utf8(output).unwrap();
+        println!("{}", output_str);
+        if show_passwords {
+            assert!(output_str.contains(&format!(
+                "Service: {}, Username: {}, Password: {}",
+                service.blue(),
+                username.blue(),
+                password.blue()
+            )))
+        } else {
+            assert!(output_str.contains(&format!(
+                "Service: {}, Username: {}, Password: {}",
+                service.blue(),
+                username.blue(),
+                "***".blue()
+            )))
+        }
     }
 }
