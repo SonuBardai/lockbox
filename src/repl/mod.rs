@@ -79,10 +79,7 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 let generate = match input.as_str() {
                     "1" | "generate" | "g" | "random" | "r" => true,
                     "2" | "enter" | "e" => false,
-                    _ => {
-                        println!("{}", "Invalid input".red());
-                        continue;
-                    }
+                    _ => continue,
                 };
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
@@ -107,7 +104,18 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 };
             }
             "2" | "generate" | "g" => {
-                generate_password(Length::Sixteen, false, true, true, true, 1);
+                match generate_password(
+                    Length::Sixteen,
+                    false,
+                    true,
+                    true,
+                    true,
+                    1,
+                    &mut std::io::stdout(),
+                ) {
+                    Ok(_) => (),
+                    Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
+                };
             }
             "3" | "list" | "l" => {
                 list_passwords(&mut password_store, true).unwrap_or_else(|err| {

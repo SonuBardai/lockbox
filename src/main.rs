@@ -66,7 +66,18 @@ fn main() {
                 lowercase,
                 numbers,
                 count,
-            } => generate_password(length, symbols, uppercase, lowercase, numbers, count),
+            } => match generate_password(
+                length,
+                symbols,
+                uppercase,
+                lowercase,
+                numbers,
+                count,
+                &mut std::io::stdout(),
+            ) {
+                Ok(_) => (),
+                Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
+            },
             Command::List {
                 file_name,
                 master,
