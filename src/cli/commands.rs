@@ -79,26 +79,16 @@ pub fn generate_password(
     } else {
         match password_generator.generate_one() {
             Ok(password) => {
+                writeln!(writer, "{}\tRandom password generated", password.green())?;
                 match copy_to_clipboard(password.clone()) {
-                    Ok(_) => (),
+                    Ok(_) => writeln!(writer, "(Copied to clipboard)")?,
                     Err(err) => {
-                        writeln!(writer, "Random password generated")?;
                         writeln!(
                             writer,
                             "{}",
-                            format!("Note: Failed to copy password to clipboard: {}", err).yellow()
+                            format!("(Failed to copy password to clipboard: {})", err).yellow()
                         )?;
                     }
-                }
-                if copy_to_clipboard(password.clone()).is_ok() {
-                    writeln!(writer, "{} (Copied to Clipboard)", password.green())?;
-                } else {
-                    writeln!(writer, "{}", password.green())?;
-                    writeln!(
-                        writer,
-                        "{}",
-                        "Note: Failed to copy password to clipboard".red()
-                    )?
                 }
             }
             Err(err) => writeln!(
@@ -186,7 +176,7 @@ mod test {
     }
 
     #[rstest]
-    #[case(Length::Eight, true, true, true, true, 1)]
+    #[case(Length::Eight, true, true, true, true, 2)]
     #[case(Length::Sixteen, false, true, true, true, 2)]
     #[case(Length::ThirtyTwo, true, false, true, true, 3)]
     #[case(Length::Sixteen, true, false, false, false, 2)]
