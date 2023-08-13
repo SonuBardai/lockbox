@@ -227,13 +227,17 @@ mod test {
         ))
     }
 
-    #[rstest]
-    #[case("service1".to_string(), Some("username1".to_string()), "password1".to_string())]
-    #[case("service2", None, "password2".to_string())]
+    #[rstest(
+        service, username, password, expect_password_found,
+        case("service1".to_string(), Some("username1".to_string()), "password1".to_string(), true),
+        case("service2", None, "password2".to_string(), true),
+        case("service3", None, "password3".to_string(), false)
+    )]
     fn test_show_password(
-        #[case] service: String,
-        #[case] username: Option<String>,
-        #[case] password: String,
+        service: String,
+        username: Option<String>,
+        password: String,
+        expect_password_found: bool,
     ) {
         let master = "master_password".to_string();
         let temp_file = NamedTempFile::new().unwrap();
@@ -251,12 +255,25 @@ mod test {
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
-        let result = show_password(&mut password_store, service, username, &mut writer);
+        let result = if expect_password_found {
+            show_password(&mut password_store, service, username, &mut writer)
+        } else {
+            show_password(
+                &mut password_store,
+                "not_found_service".to_string(),
+                Some("not_found_username".to_string()),
+                &mut writer,
+            )
+        };
         assert!(result.is_ok());
 
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(&password));
+        if expect_password_found {
+            assert!(output_str.contains(&password));
+        } else {
+            assert!(output_str.contains("Password not found"));
+        }
     }
 
     #[rstest(
