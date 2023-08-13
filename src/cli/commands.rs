@@ -208,7 +208,7 @@ mod test {
         assert_eq!(lines.len(), count);
         if count == 1 {
             println!("{}", output_str);
-            assert!(output_str.contains("(Copied to Clipboard)"))
+            assert!(output_str.contains("Random password generated"))
         }
     }
 
