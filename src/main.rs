@@ -129,7 +129,12 @@ fn main() {
                         return;
                     }
                 };
-                match show_password(&mut password_store, service, username) {
+                match show_password(
+                    &mut password_store,
+                    service,
+                    username,
+                    &mut std::io::stdout(),
+                ) {
                     Ok(_) => (),
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }

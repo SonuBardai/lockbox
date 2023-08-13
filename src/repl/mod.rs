@@ -137,7 +137,14 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 let service = read_terminal_input(Some("Please enter the service name"));
                 let username = read_terminal_input(Some("Please enter the username (Optional)"));
                 let username = Option::from(username).filter(|s| !s.is_empty());
-                if show_password(&mut password_store, service, username).is_err() {
+                if show_password(
+                    &mut password_store,
+                    service,
+                    username,
+                    &mut std::io::stdout(),
+                )
+                .is_err()
+                {
                     eprintln!("Password not found");
                 };
             }

@@ -28,11 +28,12 @@ pub fn add_password(
         let password = password_generator
             .generate_one()
             .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
-        if copy_to_clipboard(password.clone()).is_ok() {
-            println!("Random password generated and copied to clipboard");
-        } else {
-            println!("Random password generated");
-            println!("Note: Failed to copy password to clipboard");
+        match copy_to_clipboard(password.clone()) {
+            Ok(_) => println!("Random password generated and copied to clipboard"),
+            Err(err) => {
+                println!("Random password generated");
+                println!("Note: Failed to copy password to clipboard: {}", err);
+            }
         }
         password
     } else {
@@ -103,12 +104,13 @@ pub fn show_password(
     password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
+    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     let password = password_store.load()?.find(service, username);
     if let Some(password) = password {
-        password.print_password(Some(Color::Blue));
+        password.print_password(Some(Color::Blue), writer)?;
     } else {
-        println!("Password not found");
+        writeln!(writer, "Password not found")?;
     }
     Ok(())
 }
@@ -222,14 +224,39 @@ mod test {
     }
 
     #[rstest]
-    #[case("service1".to_string(), Some("username1".to_string()))]
-    #[case("service2", None)]
-    fn test_show_password(#[case] service: String, #[case] username: Option<String>) {
+    #[case("service1".to_string(), Some("username1".to_string()), "password1".to_string())]
+    #[case("service2", None, "password2".to_string())]
+    fn test_show_password(
+        #[case] service: String,
+        #[case] username: Option<String>,
+        #[case] password: String,
+    ) {
         let master = "master_password".to_string();
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
-        let result = show_password(&mut password_store, service, username.map(|s| s));
+        add_password(
+            &mut password_store,
+            service.clone(),
+            username.clone(),
+            Some(password.clone()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+
+        let mut output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
+        let result = show_password(
+            &mut password_store,
+            service,
+            username.map(|s| s),
+            &mut writer,
+        );
         assert!(result.is_ok());
+
+        output = writer.into_inner();
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains(&password));
     }
 }

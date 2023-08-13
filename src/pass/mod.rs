@@ -1,5 +1,6 @@
 use colored::*;
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PasswordEntry {
@@ -16,12 +17,17 @@ impl PasswordEntry {
             password,
         }
     }
-    pub fn print_password(&self, color: Option<Color>) {
+    pub fn print_password(
+        &self,
+        color: Option<Color>,
+        writer: &mut dyn Write,
+    ) -> anyhow::Result<()> {
         if let Some(color) = color {
-            println!("Password: {}", self.password.color(color));
+            writeln!(writer, "Password: {}", self.password.color(color))?;
         } else {
-            println!("Password: {}", self.password);
+            writeln!(writer, "Password: {}", self.password)?;
         }
+        Ok(())
     }
 }
 
