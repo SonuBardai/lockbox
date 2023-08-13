@@ -309,7 +309,7 @@ mod test {
     )]
     fn test_get_about(input: Option<(Width, Height)>) {
         let received = get_about(input);
-        assert!(received.contains(&ABOUT));
+        assert!(received.contains(ABOUT));
         let ascii_art_lines = ASCII_ART_ABOUT.lines().collect::<Vec<&str>>();
         let ascii_art_height = ascii_art_lines.len();
         let ascii_art_width = ascii_art_lines

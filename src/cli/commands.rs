@@ -163,7 +163,7 @@ mod test {
         let result = add_password(
             &mut password_store,
             service.clone(),
-            username.clone().map(|s| s.to_string()),
+            username.clone().map(|s| s),
             password.map(|s| s.to_string()),
             generate,
             password_generator,
@@ -231,8 +231,8 @@ mod test {
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
         let result = show_password(
             &mut password_store,
-            service.to_string(),
-            username.map(|s| s.to_string()),
+            service,
+            username.map(|s| s),
         );
         assert!(result.is_ok());
     }
