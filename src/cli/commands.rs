@@ -79,6 +79,17 @@ pub fn generate_password(
     } else {
         match password_generator.generate_one() {
             Ok(password) => {
+                match copy_to_clipboard(password.clone()) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        writeln!(writer, "Random password generated")?;
+                        writeln!(
+                            writer,
+                            "{}",
+                            format!("Note: Failed to copy password to clipboard: {}", err).yellow()
+                        )?;
+                    }
+                }
                 if copy_to_clipboard(password.clone()).is_ok() {
                     writeln!(writer, "{} (Copied to Clipboard)", password.green())?;
                 } else {
