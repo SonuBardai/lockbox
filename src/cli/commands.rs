@@ -165,7 +165,7 @@ mod test {
         let result = add_password(
             &mut password_store,
             service.clone(),
-            username.clone().map(|s| s),
+            username.clone(),
             password.map(|s| s.to_string()),
             generate,
             password_generator,
@@ -247,12 +247,7 @@ mod test {
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
-        let result = show_password(
-            &mut password_store,
-            service,
-            username.map(|s| s),
-            &mut writer,
-        );
+        let result = show_password(&mut password_store, service, username, &mut writer);
         assert!(result.is_ok());
 
         output = writer.into_inner();
