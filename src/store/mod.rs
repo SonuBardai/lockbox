@@ -120,6 +120,8 @@ impl PasswordStore {
 
 #[cfg(test)]
 mod tests {
+    use crate::cli::commands::add_password;
+    use passwords::PasswordGenerator;
     use rstest::rstest;
     use tempfile::NamedTempFile;
 
@@ -291,5 +293,56 @@ mod tests {
         } else {
             assert_eq!(found_password, None);
         }
+    }
+
+    #[rstest(
+    show_passwords,
+    color,
+    passwords,
+    expected_output,
+    case(
+        true,
+        Some(Color::Blue),
+        vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+        format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "password1".blue(), "service2".blue(), "password2".blue())
+    ),
+    case(
+        false,
+        Some(Color::Blue),
+        vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+        format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "***".blue(), "service2".blue(), "***".blue())
+    )
+    )]
+    fn test_print_all(
+        show_passwords: bool,
+        color: Option<Color>,
+        passwords: Vec<(&str, Option<&str>, &str)>,
+        expected_output: String,
+    ) {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store =
+            PasswordStore::new(temp_file_name.to_string(), "master_password".to_string()).unwrap();
+        passwords
+            .into_iter()
+            .for_each(|(service, username, password)| {
+                add_password(
+                    &mut password_store,
+                    service.to_string(),
+                    username.map(|u| u.to_string()),
+                    Some(password.to_string()),
+                    false,
+                    PasswordGenerator::default(),
+                )
+                .unwrap()
+            });
+
+        let mut output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
+        password_store.print(show_passwords, color, &mut writer);
+
+        output = writer.into_inner();
+        let output_str = String::from_utf8(output).unwrap();
+        assert_eq!(output_str, expected_output);
     }
 }
