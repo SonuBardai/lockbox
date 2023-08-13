@@ -351,7 +351,7 @@ mod test {
         ("service1", "username1"),
         vec![("service2", "username2", "password2"), ("service3", "username3", "password3")]
     )
-)]
+    )]
     fn test_remove_password(
         passwords_to_add: Vec<(&str, &str, &str)>,
         password_to_remove: (&str, &str),
