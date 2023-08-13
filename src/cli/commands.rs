@@ -304,4 +304,46 @@ mod test {
             )))
         }
     }
+
+    #[test]
+    fn test_remove_password() {
+        let master = "master_password".to_string();
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+
+        add_password(
+            &mut password_store,
+            "service1".to_string(),
+            Some("username1".to_string()),
+            Some("password1".to_string()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+        add_password(
+            &mut password_store,
+            "service2".to_string(),
+            Some("username2".to_string()),
+            Some("password2".to_string()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+
+        let result = remove_password(
+            &mut password_store,
+            "service1".to_string(),
+            Some("username1".to_string()),
+        );
+        assert!(result.is_ok());
+        assert_eq!(
+            password_store.find("service1".to_string(), Some("username1".to_string())),
+            None
+        );
+        assert_ne!(
+            password_store.find("service2".to_string(), Some("username2".to_string())),
+            None
+        )
+    }
 }
