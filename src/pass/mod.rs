@@ -90,79 +90,57 @@ impl Passwords {
                     if let Some(color) = color {
                         writeln!(
                             writer,
-                            "{}",
-                            format!(
-                                "Service: {}, Username: {}, Password: {}",
-                                pwd.service.color(color),
-                                username.color(color),
-                                pwd.password.color(color)
-                            )
+                            "Service: {}, Username: {}, Password: {}",
+                            pwd.service.color(color),
+                            username.color(color),
+                            pwd.password.color(color)
                         )?;
                     } else {
                         writeln!(
                             writer,
-                            "{}",
-                            format!(
-                                "Service: {}, Username: {}, Password: {}",
-                                pwd.service, username, pwd.password
-                            )
+                            "Service: {}, Username: {}, Password: {}",
+                            pwd.service, username, pwd.password
                         )?;
                     }
                 } else if let Some(color) = color {
                     writeln!(
                         writer,
-                        "{}",
-                        format!(
-                            "Service: {}, Password: {}",
-                            pwd.service.color(color),
-                            pwd.password.color(color)
-                        )
+                        "Service: {}, Password: {}",
+                        pwd.service.color(color),
+                        pwd.password.color(color)
                     )?;
                 } else {
                     writeln!(
                         writer,
-                        "{}",
-                        format!("Service: {}, Password: {}", pwd.service, pwd.password)
+                        "Service: {}, Password: {}",
+                        pwd.service, pwd.password
                     )?;
                 }
             } else if let Some(username) = &pwd.username {
                 if let Some(color) = color {
                     writeln!(
                         writer,
-                        "{}",
-                        format!(
-                            "Service: {}, Username: {}, Password: {}",
-                            pwd.service.color(color),
-                            username.color(color),
-                            "***".color(color)
-                        )
+                        "Service: {}, Username: {}, Password: {}",
+                        pwd.service.color(color),
+                        username.color(color),
+                        "***".color(color)
                     )?;
                 } else {
                     writeln!(
                         writer,
-                        "{}",
-                        format!(
-                            "Service: {}, Username: {}, Password: ***",
-                            pwd.service, username
-                        )
+                        "Service: {}, Username: {}, Password: ***",
+                        pwd.service, username
                     )?;
                 }
             } else if let Some(color) = color {
                 writeln!(
                     writer,
-                    "{}",
-                    format!(
-                        "Service: {}, Password: {}",
-                        pwd.service.color(color),
-                        "***".color(color)
-                    )
+                    "Service: {}, Password: {}",
+                    pwd.service.color(color),
+                    "***".color(color)
                 )?;
             } else {
-                writeln!(
-                    writer,
-                    "{}",
-                    format!("Service: {}, Password: ***", pwd.service)
-                )?;
+                writeln!(writer, "Service: {}, Password: ***", pwd.service)?;
             }
         }
         Ok(())
