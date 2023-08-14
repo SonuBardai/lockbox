@@ -13,7 +13,7 @@ pub struct RpasswordPromptPassword;
 
 impl PromptPassword for RpasswordPromptPassword {
     fn prompt_password(&self, prompt: String) -> Result<String, Error> {
-        rpassword::prompt_password(&prompt)
+        rpassword::prompt_password(prompt)
     }
 }
 
