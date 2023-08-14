@@ -176,8 +176,7 @@ fn handle_show_password(password_store: &mut PasswordStore) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cli::io::MockPromptPassword;
-    use mockall::predicate::*;
+
     use tempfile::NamedTempFile;
 
     // #[test]
