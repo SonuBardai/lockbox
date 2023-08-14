@@ -2,7 +2,7 @@ use clap::Parser;
 use colored::*;
 use lockbox::{
     cli::{
-        args::{Args, Command},
+        args::{Args, Command, DEFAULT_PASSWORD_FILE_NAME},
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
         },
@@ -15,7 +15,11 @@ use passwords::PasswordGenerator;
 
 fn main() {
     if std::env::args().len() == 1 {
-        repl()
+        repl(
+            DEFAULT_PASSWORD_FILE_NAME.to_string(),
+            &mut std::io::stdout(),
+            &RpasswordPromptPassword,
+        )
     } else {
         let args = Args::parse();
         match args.command {
@@ -147,7 +151,11 @@ fn main() {
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }
             }
-            Command::Repl => repl(),
+            Command::Repl => repl(
+                DEFAULT_PASSWORD_FILE_NAME.to_string(),
+                &mut std::io::stdout(),
+                &RpasswordPromptPassword,
+            ),
         }
     }
 }
