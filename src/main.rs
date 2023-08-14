@@ -6,7 +6,7 @@ use lockbox::{
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
         },
-        io::read_hidden_input,
+        io::{read_hidden_input, RpasswordPromptPassword},
     },
     repl::repl,
     store::PasswordStore,
@@ -39,7 +39,9 @@ fn main() {
                     .numbers(numbers)
                     .symbols(symbols)
                     .strict(true);
-                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let master = master.unwrap_or_else(|| {
+                    read_hidden_input("master password", &RpasswordPromptPassword)
+                });
                 let mut password_store = match PasswordStore::new(file_name, master) {
                     Ok(password_store) => password_store,
                     Err(err) => {
@@ -83,7 +85,9 @@ fn main() {
                 master,
                 show_passwords,
             } => {
-                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let master = master.unwrap_or_else(|| {
+                    read_hidden_input("master password", &RpasswordPromptPassword)
+                });
                 let mut password_store = match PasswordStore::new(file_name, master) {
                     Ok(password_store) => password_store,
                     Err(err) => {
@@ -102,7 +106,9 @@ fn main() {
                 username,
                 master,
             } => {
-                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let master = master.unwrap_or_else(|| {
+                    read_hidden_input("master password", &RpasswordPromptPassword)
+                });
                 let mut password_store = match PasswordStore::new(file_name, master) {
                     Ok(password_store) => password_store,
                     Err(err) => {
@@ -121,7 +127,9 @@ fn main() {
                 username,
                 master,
             } => {
-                let master = master.unwrap_or_else(|| read_hidden_input("master password"));
+                let master = master.unwrap_or_else(|| {
+                    read_hidden_input("master password", &RpasswordPromptPassword)
+                });
                 let mut password_store = match PasswordStore::new(file_name, master) {
                     Ok(password_store) => password_store,
                     Err(err) => {

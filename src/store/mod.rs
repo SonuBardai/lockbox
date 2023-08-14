@@ -313,7 +313,7 @@ mod tests {
         format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "***".blue(), "service2".blue(), "***".blue())
     )
     )]
-    fn test_print_all(
+    fn test_print(
         show_passwords: bool,
         color: Option<Color>,
         passwords: Vec<(&str, Option<&str>, &str)>,

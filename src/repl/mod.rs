@@ -4,16 +4,17 @@ use crate::{
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
         },
-        io::{read_hidden_input, read_terminal_input},
+        io::{read_hidden_input, read_terminal_input, RpasswordPromptPassword},
     },
     store::PasswordStore,
 };
 use colored::*;
 use passwords::PasswordGenerator;
+use std::io::{stdin, stdout};
 
 pub fn repl() {
     println!("{}", "Welcome to L🦀CKBOX!\n".bold());
-    let master = read_hidden_input("master password");
+    let master = read_hidden_input("master password", &RpasswordPromptPassword);
     let password_store = match PasswordStore::new(DEFAULT_PASSWORD_FILE_NAME.to_string(), master) {
         Ok(password_store) => password_store,
         Err(err) => {
@@ -27,7 +28,7 @@ pub fn repl() {
 pub fn run_repl(mut password_store: PasswordStore) {
     while let Err(err) = password_store.load() {
         eprintln!("{}: {err}", "Failed to load password store".red());
-        let master = read_hidden_input("master password");
+        let master = read_hidden_input("master password", &RpasswordPromptPassword);
         password_store.update_master(master);
     }
     loop {
@@ -57,7 +58,7 @@ pub fn run_repl(mut password_store: PasswordStore) {
         ];
         let message = message.join(" ");
         println!("\nEnter {message}");
-        let input = read_terminal_input(None);
+        let input = read_terminal_input(&mut stdin().lock(), &mut stdout().lock(), None);
         match input.as_str() {
             "1" | "add" | "a" => {
                 let message = [
@@ -75,14 +76,22 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 ];
                 let message = message.join(" ");
                 println!("{}", message);
-                let input = read_terminal_input(None);
+                let input = read_terminal_input(&mut stdin().lock(), &mut stdout().lock(), None);
                 let generate = match input.as_str() {
                     "1" | "generate" | "g" | "random" | "r" => true,
                     "2" | "enter" | "e" => false,
                     _ => continue,
                 };
-                let service = read_terminal_input(Some("Please enter the service name"));
-                let username = read_terminal_input(Some("Please enter the username (Optional)"));
+                let service = read_terminal_input(
+                    &mut stdin().lock(),
+                    &mut stdout().lock(),
+                    Some("Please enter the service name"),
+                );
+                let username = read_terminal_input(
+                    &mut stdin().lock(),
+                    &mut stdout().lock(),
+                    Some("Please enter the username (Optional)"),
+                );
                 let username = Option::from(username).filter(|s| !s.is_empty());
                 let password_generator = PasswordGenerator::new()
                     .length(Length::Sixteen.get_val())
@@ -123,8 +132,16 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 );
             }
             "4" | "remove" | "r" => {
-                let service = read_terminal_input(Some("Please enter the service name"));
-                let username = read_terminal_input(Some("Please enter the username (Optional)"));
+                let service = read_terminal_input(
+                    &mut stdin().lock(),
+                    &mut stdout().lock(),
+                    Some("Please enter the service name"),
+                );
+                let username = read_terminal_input(
+                    &mut stdin().lock(),
+                    &mut stdout().lock(),
+                    Some("Please enter the username (Optional)"),
+                );
                 let username = Option::from(username).filter(|s| !s.is_empty());
                 remove_password(&mut password_store, service, username).unwrap_or_else(|err| {
                     panic!(
@@ -134,8 +151,16 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 });
             }
             "5" | "show" | "s" => {
-                let service = read_terminal_input(Some("Please enter the service name"));
-                let username = read_terminal_input(Some("Please enter the username (Optional)"));
+                let service = read_terminal_input(
+                    &mut stdin().lock(),
+                    &mut stdout().lock(),
+                    Some("Please enter the service name"),
+                );
+                let username = read_terminal_input(
+                    &mut stdin().lock(),
+                    &mut stdout().lock(),
+                    Some("Please enter the username (Optional)"),
+                );
                 let username = Option::from(username).filter(|s| !s.is_empty());
                 if show_password(
                     &mut password_store,
