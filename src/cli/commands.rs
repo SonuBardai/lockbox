@@ -129,12 +129,16 @@ pub fn list_passwords(
     Ok(())
 }
 
-pub fn remove_password(
+pub fn remove_password<W: Write>(
+    writer: &mut W,
     password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
 ) -> anyhow::Result<()> {
-    password_store.load()?.pop(service, username).dump()?;
+    password_store
+        .load()?
+        .pop(writer, service, username)
+        .dump()?;
     Ok(())
 }
 
@@ -382,7 +386,9 @@ mod test {
         }
 
         let (service, username) = password_to_remove;
+        let mut output = Vec::new();
         let result = remove_password(
+            &mut output,
             &mut password_store,
             service.to_string(),
             Some(username.to_string()),

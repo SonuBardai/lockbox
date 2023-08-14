@@ -120,7 +120,12 @@ fn main() {
                         return;
                     }
                 };
-                match remove_password(&mut password_store, service, username) {
+                match remove_password(
+                    &mut std::io::stdout().lock(),
+                    &mut password_store,
+                    service,
+                    username,
+                ) {
                     Ok(_) => println!("Password removed successfully"),
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }
