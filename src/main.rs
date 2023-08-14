@@ -2,7 +2,7 @@ use clap::Parser;
 use colored::*;
 use lockbox::{
     cli::{
-        args::{Args, Command},
+        args::{Args, Command, DEFAULT_PASSWORD_FILE_NAME},
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
         },
@@ -15,7 +15,12 @@ use passwords::PasswordGenerator;
 
 fn main() {
     if std::env::args().len() == 1 {
-        repl()
+        repl(
+            &mut std::io::stdin().lock(),
+            &mut std::io::stdout().lock(),
+            &RpasswordPromptPassword,
+            DEFAULT_PASSWORD_FILE_NAME.to_string(),
+        )
     } else {
         let args = Args::parse();
         match args.command {
@@ -116,7 +121,12 @@ fn main() {
                         return;
                     }
                 };
-                match remove_password(&mut password_store, service, username) {
+                match remove_password(
+                    &mut std::io::stdout().lock(),
+                    &mut password_store,
+                    service,
+                    username,
+                ) {
                     Ok(_) => println!("Password removed successfully"),
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }
@@ -147,7 +157,12 @@ fn main() {
                     Err(err) => eprintln!("{}", format!("Error: {}", err).red()),
                 }
             }
-            Command::Repl => repl(),
+            Command::Repl => repl(
+                &mut std::io::stdin().lock(),
+                &mut std::io::stdout().lock(),
+                &RpasswordPromptPassword,
+                DEFAULT_PASSWORD_FILE_NAME.to_string(),
+            ),
         }
     }
 }

@@ -83,15 +83,22 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn pop(&mut self, service: String, username: Option<String>) -> &mut Self {
+    pub fn pop<W: Write>(
+        &mut self,
+        writer: &mut W,
+        service: String,
+        username: Option<String>,
+    ) -> &mut Self {
         if let Some(_password) = self
             .passwords
             .as_mut()
             .and_then(|passwords| passwords.remove(service, username))
         {
-            println!("{}", "Password deleted".green());
+            writeln!(writer, "{}", "Password deleted".green())
+                .unwrap_or_else(|_| panic!("Failed to write to stdout"));
         } else {
-            println!("{}", "Password not found".bright_yellow())
+            writeln!(writer, "{}", "Password not found".bright_yellow())
+                .unwrap_or_else(|_| panic!("Failed to write to stdout"));
         }
         self
     }
