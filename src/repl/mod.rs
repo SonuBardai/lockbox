@@ -248,7 +248,7 @@ mod tests {
         handle_generate_password(&mut output);
 
         let output_str = String::from_utf8(output).unwrap();
-        println!("OUTPUT: ", output_str);
+        println!("OUTPUT: {}", output_str);
         assert!(output_str.contains("Random password generated."));
     }
 
