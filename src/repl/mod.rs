@@ -10,9 +10,14 @@ use crate::{
 };
 use colored::*;
 use passwords::PasswordGenerator;
-use std::io::{stdin, stdout, BufRead, Write};
+use std::io::{BufRead, Write};
 
-pub fn repl<W: Write>(file_name: String, writer: &mut W, prompt_password: &dyn PromptPassword) {
+pub fn repl<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    file_name: String,
+) {
     writeln!(writer, "{}", "Welcome to L🦀CKBOX!\n".bold()).unwrap();
     let master = read_hidden_input("master password", prompt_password);
     let password_store = match PasswordStore::new(file_name, master) {
@@ -22,12 +27,16 @@ pub fn repl<W: Write>(file_name: String, writer: &mut W, prompt_password: &dyn P
             return;
         }
     };
-    run_repl(password_store);
+    run_repl(reader, writer, password_store);
 }
 
-pub fn run_repl(mut password_store: PasswordStore) {
+pub fn run_repl<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    mut password_store: PasswordStore,
+) {
     while let Err(err) = password_store.load() {
-        eprintln!("{}: {err}", "Failed to load password store".red());
+        writeln!(writer, "{}: {err}", "Failed to load password store".red()).unwrap();
         let master = read_hidden_input("master password", &RpasswordPromptPassword);
         password_store.update_master(master);
     }
@@ -57,26 +66,14 @@ pub fn run_repl(mut password_store: PasswordStore) {
             format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
         ];
         let message = message.join(" ");
-        println!("\nEnter {message}");
-        let input = read_terminal_input(&mut stdin().lock(), &mut stdout().lock(), None);
+        writeln!(writer, "\nEnter {message}").unwrap();
+        let input = read_terminal_input(reader, writer, None);
         match input.as_str() {
-            "1" | "add" | "a" => handle_add_password(
-                &mut stdin().lock(),
-                &mut stdout().lock(),
-                &mut password_store,
-            ),
-            "2" | "generate" | "g" => handle_generate_password(&mut stdout().lock()),
-            "3" | "list" | "l" => handle_list_passwords(&mut stdout().lock(), &mut password_store),
-            "4" | "remove" | "r" => handle_remove_password(
-                &mut stdin().lock(),
-                &mut stdout().lock(),
-                &mut password_store,
-            ),
-            "5" | "show" | "s" => handle_show_password(
-                &mut stdin().lock(),
-                &mut stdout().lock(),
-                &mut password_store,
-            ),
+            "1" | "add" | "a" => handle_add_password(reader, writer, &mut password_store),
+            "2" | "generate" | "g" => handle_generate_password(writer),
+            "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store),
+            "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
+            "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
             _ => break,
         }
     }
@@ -177,32 +174,100 @@ mod tests {
 
     use tempfile::NamedTempFile;
 
-    // #[test]
-    // fn test_repl() {
-    //     let mut output = Vec::new();
-    //     let mut mock_prompt_password = MockPromptPassword::new();
-    //     mock_prompt_password
-    //         .expect_prompt_password()
-    //         .with(eq(format!(
-    //             "Please enter the master password\n{}",
-    //             ">> ".yellow()
-    //         )))
-    //         .times(1)
-    //         .returning(|_| Ok("secret".to_string()));
+    use rstest::rstest;
 
-    //     let temp_file = NamedTempFile::new().unwrap();
-    //     let temp_file_name = temp_file.path().to_str().unwrap();
-    //     repl(
-    //         temp_file_name.to_string(),
-    //         &mut output,
-    //         &mock_prompt_password,
-    //     );
+    #[rstest(
+        input,
+        expected_output,
+        case(
+            b"add\n1\ntest_service\ntest_username\n6\n" as &[u8],
+            vec![
+                format!(
+                    "[{}] {} random password [{}] {} your own password [{}] {}",
+                    "1".green().bold(),
+                    "generate".green().bold(),
+                    "2".green().bold(),
+                    "enter".green().bold(),
+                    "3".green().bold(),
+                    "cancel".green().bold()
+                ),
+                format!("Please enter the service name"),
+                ">> ".yellow().to_string(),
+                format!(
+                    "{}Please enter the username (Optional)",
+                    ">> ".yellow()
+                ),
+                format!("{}", "Password added successfully".green())
+            ],
+        ),
+        case(
+            b"list\nexit\n" as &[u8],
+            vec![format!("Service: {}, Username: {}, Password: {}", "service".blue(), "username".blue(), "password".blue())],
+        ),
+        case(
+            b"generate\nexit\n" as &[u8],
+            vec!["Random password generated.".to_string()],
+        ),
+        case(
+            b"remove\nservice\nusername\nexit\n" as &[u8],
+            vec!["Password deleted".to_string()],
+        ),
+        case(
+            b"show\nservice\nusername\nexit\n" as &[u8],
+            vec![format!("Password: {}", "password".blue())],
+        ),
+    )]
+    fn test_run_repl(input: &[u8], expected_output: Vec<String>) {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store =
+            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        add_password(
+            &mut password_store,
+            "service".to_string(),
+            Some("username".to_string()),
+            Some("password".to_string()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+        let mut input = input;
+        let mut output = Vec::new();
 
-    //     assert_eq!(
-    //         String::from_utf8(output).unwrap(),
-    //         format!("{}\n{}", "Welcome to L🦀CKBOX!".bold(), ">> ".yellow())
-    //     );
-    // }
+        run_repl(&mut input, &mut output, password_store);
+
+        let output_str = String::from_utf8(output).unwrap();
+        let message = [
+            format!("[{}] {} password", "1".green().bold(), "add".green().bold()),
+            format!(
+                "[{}] {} random password",
+                "2".green().bold(),
+                "generate".green().bold()
+            ),
+            format!(
+                "[{}] {} passwords",
+                "3".green().bold(),
+                "list".green().bold()
+            ),
+            format!(
+                "[{}] {} password",
+                "4".green().bold(),
+                "remove".green().bold()
+            ),
+            format!(
+                "[{}] {} password",
+                "5".green().bold(),
+                "show".green().bold()
+            ),
+            format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
+        ]
+        .join(" ");
+        assert!(output_str.contains(&message));
+        for expected in expected_output {
+            println!("EXPECTED: {}", expected);
+            assert!(output_str.contains(&expected));
+        }
+    }
 
     #[test]
     fn test_handle_add_password() {
@@ -216,21 +281,21 @@ mod tests {
         handle_add_password(&mut input, &mut output, &mut password_store);
 
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(&format!(
-            "[{}] {} random password",
-            "1".green().bold(),
-            "generate".green().bold()
-        )));
-        assert!(output_str.contains(&format!(
-            "[{}] {} your own password",
-            "2".green().bold(),
-            "enter".green().bold()
-        )));
-        assert!(output_str.contains(&format!(
-            "[{}] {}",
-            "3".green().bold(),
-            "cancel".green().bold()
-        )));
+        let message = [
+            format!(
+                "[{}] {} random password",
+                "1".green().bold(),
+                "generate".green().bold()
+            ),
+            format!(
+                "[{}] {} your own password",
+                "2".green().bold(),
+                "enter".green().bold()
+            ),
+            format!("[{}] {}", "3".green().bold(), "cancel".green().bold()),
+        ]
+        .join(" ");
+        assert!(output_str.contains(&message));
         assert!(output_str.contains(&format!("{}Please enter the service name", ">> ".yellow())));
         assert!(output_str.contains(&format!(
             "{}Please enter the username (Optional)",

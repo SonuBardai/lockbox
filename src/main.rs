@@ -16,9 +16,10 @@ use passwords::PasswordGenerator;
 fn main() {
     if std::env::args().len() == 1 {
         repl(
-            DEFAULT_PASSWORD_FILE_NAME.to_string(),
-            &mut std::io::stdout(),
+            &mut std::io::stdin().lock(),
+            &mut std::io::stdout().lock(),
             &RpasswordPromptPassword,
+            DEFAULT_PASSWORD_FILE_NAME.to_string(),
         )
     } else {
         let args = Args::parse();
@@ -157,9 +158,10 @@ fn main() {
                 }
             }
             Command::Repl => repl(
-                DEFAULT_PASSWORD_FILE_NAME.to_string(),
-                &mut std::io::stdout(),
+                &mut std::io::stdin().lock(),
+                &mut std::io::stdout().lock(),
                 &RpasswordPromptPassword,
+                DEFAULT_PASSWORD_FILE_NAME.to_string(),
             ),
         }
     }
