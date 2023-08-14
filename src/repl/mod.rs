@@ -72,7 +72,11 @@ pub fn run_repl(mut password_store: PasswordStore) {
                 &mut stdout().lock(),
                 &mut password_store,
             ),
-            "5" | "show" | "s" => handle_show_password(&mut password_store),
+            "5" | "show" | "s" => handle_show_password(
+                &mut stdin().lock(),
+                &mut stdout().lock(),
+                &mut password_store,
+            ),
             _ => break,
         }
     }
@@ -148,26 +152,22 @@ fn handle_remove_password<R: BufRead, W: Write>(
     let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
     let username =
         read_terminal_input(reader, writer, Some("Please enter the username (Optional)"));
-    println!("SERVICE: {} USERNAME: {}", service, username);
     let username = Option::from(username).filter(|s| !s.is_empty());
     remove_password(writer, password_store, service, username)
         .unwrap_or_else(|err| panic!("{}: {err}", "Failed to remove password!".red()));
 }
 
-fn handle_show_password(password_store: &mut PasswordStore) {
-    let service = read_terminal_input(
-        &mut stdin().lock(),
-        &mut stdout().lock(),
-        Some("Please enter the service name"),
-    );
-    let username = read_terminal_input(
-        &mut stdin().lock(),
-        &mut stdout().lock(),
-        Some("Please enter the username (Optional)"),
-    );
+fn handle_show_password<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    password_store: &mut PasswordStore,
+) {
+    let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
+    let username =
+        read_terminal_input(reader, writer, Some("Please enter the username (Optional)"));
     let username = Option::from(username).filter(|s| !s.is_empty());
-    if show_password(password_store, service, username, &mut std::io::stdout()).is_err() {
-        eprintln!("Password not found");
+    if show_password(password_store, service, username, writer).is_err() {
+        writeln!(writer, "Password not found").unwrap();
     };
 }
 
@@ -295,7 +295,6 @@ mod tests {
         let mut output = Vec::new();
         handle_remove_password(&mut input, &mut output, &mut password_store);
         let output_str = String::from_utf8(output).unwrap();
-        println!("OUTPUT: \n{}", output_str);
         assert!(output_str.contains(&"Password not found".bright_yellow().to_string()));
 
         input = b"service\nusername\n" as &[u8];
@@ -303,5 +302,32 @@ mod tests {
         handle_remove_password(&mut input, &mut output, &mut password_store);
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains(&"Password deleted".green().to_string()));
+    }
+
+    #[test]
+    fn test_handle_show_password() {
+        let mut password_store =
+            PasswordStore::new("test".to_string(), "secret".to_string()).unwrap();
+        add_password(
+            &mut password_store,
+            "service".to_string(),
+            Some("username".to_string()),
+            Some("password".to_string()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+
+        let mut input = b"test_service\ntest_username\n" as &[u8];
+        let mut output = Vec::new();
+        handle_show_password(&mut input, &mut output, &mut password_store);
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains("Password not found"));
+
+        input = b"service\nusername\n" as &[u8];
+        output = Vec::new();
+        handle_show_password(&mut input, &mut output, &mut password_store);
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains("password"));
     }
 }
