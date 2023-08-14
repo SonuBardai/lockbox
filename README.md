@@ -6,6 +6,12 @@ Lockbox is a command-line tool for generating and managing passwords. It uses st
 
 [![codecov](https://codecov.io/gh/SonuBardai/lockbox/branch/main/graph/badge.svg?token=XV39653NA5)](https://codecov.io/gh/SonuBardai/lockbox)
 
+### Project Features
+- **Secure**: Lockbox uses the cutting-edge AES-GCM (Advanced Encryption Standard with Galoise Counter Mode) encryption algorithm to ensure that your passwords are always safe and secure. You can rest easy knowing that your data is protected by the best.
+- **One Master Key**: With Lockbox, you only need to remember one master password. The advanced PBKDF2 (Password-Based Key Derivation Function 2) key derivation function takes care of the rest, allowing you to access all your passwords with ease.
+- **Command-Line Power**: Lockbox comes with a fully functional command-line interface (CLI) and a Read-Eval-Print Loop (REPL), giving you complete control over your password management through the terminal.
+- **Tested and Verified**: Lockbox’s codebase is thoroughly tested and verified, with code coverage reports available for all to see. You can trust that Lockbox is reliable and dependable.
+
 ### Usage
 - To use Lockbox, first make sure you have [Rust installed](https://www.rust-lang.org/tools/install) on your system.
 - Then, clone this repository with `git clone git@github.com:SonuBardai/lockbox.git`.
