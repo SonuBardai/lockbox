@@ -88,7 +88,7 @@ pub fn generate_password(
                         writeln!(
                             writer,
                             "{}",
-                            format!("(Failed to copy password to clipboard: {})", err).yellow()
+                            format!("(Random password generated. Failed to copy password to clipboard: {})", err).yellow()
                         )?;
                     }
                 }
