@@ -8,6 +8,8 @@ use colored::*;
 use passwords::PasswordGenerator;
 use std::io::Write;
 
+use super::io::RpasswordPromptPassword;
+
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
     let mut ctx = ctx_result.map_err(|_| anyhow!("Unable to initialize clipboard"))?;
@@ -37,7 +39,7 @@ pub fn add_password(
         }
         password
     } else {
-        password.unwrap_or_else(|| read_hidden_input("password"))
+        password.unwrap_or_else(|| read_hidden_input("password", &RpasswordPromptPassword))
     };
     password_store
         .load()?
@@ -79,9 +81,9 @@ pub fn generate_password(
     } else {
         match password_generator.generate_one() {
             Ok(password) => {
-                writeln!(writer, "{}\tRandom password generated", password.green())?;
+                writeln!(writer, "{}", password.green())?;
                 match copy_to_clipboard(password) {
-                    Ok(_) => writeln!(writer, "(Copied to clipboard)")?,
+                    Ok(_) => writeln!(writer, "(Random password generated. Copied to clipboard)")?,
                     Err(err) => {
                         writeln!(
                             writer,
