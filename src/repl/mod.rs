@@ -170,11 +170,69 @@ fn handle_show_password<R: BufRead, W: Write>(
 
 #[cfg(test)]
 mod tests {
+    use crate::cli::io::MockPromptPassword;
+
     use super::*;
 
+    use mockall::predicate::eq;
     use tempfile::NamedTempFile;
 
     use rstest::rstest;
+
+    #[test]
+    fn test_repl() {
+        let mut input = b"" as &[u8];
+        let mut output = Vec::new();
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .with(eq(format!(
+                "Please enter the {}\n{}",
+                "master password",
+                ">> ".yellow()
+            )))
+            .times(1)
+            .returning(|_| Ok("secret".to_string()));
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap().to_string();
+
+        repl(
+            &mut input,
+            &mut output,
+            &mock_prompt_password,
+            temp_file_name,
+        );
+
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains(&format!("{}", "Welcome to L🦀CKBOX!\n".bold())));
+        let message = [
+            format!("[{}] {} password", "1".green().bold(), "add".green().bold()),
+            format!(
+                "[{}] {} random password",
+                "2".green().bold(),
+                "generate".green().bold()
+            ),
+            format!(
+                "[{}] {} passwords",
+                "3".green().bold(),
+                "list".green().bold()
+            ),
+            format!(
+                "[{}] {} password",
+                "4".green().bold(),
+                "remove".green().bold()
+            ),
+            format!(
+                "[{}] {} password",
+                "5".green().bold(),
+                "show".green().bold()
+            ),
+            format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
+        ]
+        .join(" ");
+        assert!(output_str.contains(&format!("{}", "Welcome to L🦀CKBOX!\n".bold())));
+        assert!(output_str.contains(&message));
+    }
 
     #[rstest(
         input,
