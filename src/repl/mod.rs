@@ -23,7 +23,7 @@ pub fn repl<R: BufRead, W: Write>(
     let password_store = match PasswordStore::new(file_name, master) {
         Ok(password_store) => password_store,
         Err(err) => {
-            eprintln!("{}", err);
+            writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
             return;
         }
     };
@@ -325,7 +325,6 @@ mod tests {
         .join(" ");
         assert!(output_str.contains(&message));
         for expected in expected_output {
-            println!("EXPECTED: {}", expected);
             assert!(output_str.contains(&expected));
         }
     }

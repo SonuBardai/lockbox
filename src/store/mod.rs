@@ -112,10 +112,11 @@ impl PasswordStore {
     pub fn print(&self, show_passwords: bool, color: Option<Color>, writer: &mut dyn Write) {
         if let Some(passwords) = self.passwords.as_ref() {
             if let Err(err) = passwords.print_all(show_passwords, color, writer) {
-                eprintln!("{}", err);
+                writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
             };
         } else {
-            println!("No passwords found!")
+            writeln!(writer, "No passwords found!")
+                .unwrap_or_else(|_| println!("No passwords found!"))
         }
     }
 
