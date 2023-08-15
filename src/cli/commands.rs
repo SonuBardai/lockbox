@@ -25,16 +25,21 @@ pub fn add_password(
     password: Option<String>,
     generate: bool,
     password_generator: PasswordGenerator,
+    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     let password = if generate {
         let password = password_generator
             .generate_one()
             .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
         match copy_to_clipboard(password.clone()) {
-            Ok(_) => println!("Random password generated and copied to clipboard"),
+            Ok(_) => writeln!(writer, "Random password generated and copied to clipboard")?,
             Err(err) => {
-                println!("Random password generated");
-                println!("Note: Failed to copy password to clipboard: {}", err);
+                writeln!(writer, "Random password generated")?;
+                writeln!(
+                    writer,
+                    "Note: Failed to copy password to clipboard: {}",
+                    err
+                )?;
             }
         }
         password
@@ -171,6 +176,8 @@ mod test {
         let master = "master_password".to_string();
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
+        let output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
         let result = add_password(
             &mut password_store,
@@ -179,6 +186,7 @@ mod test {
             password.map(|s| s.to_string()),
             generate,
             password_generator,
+            &mut writer,
         );
         assert!(result.is_ok());
         assert!(password_store.find(service, username).is_some());
@@ -249,6 +257,8 @@ mod test {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+        let output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
         add_password(
             &mut password_store,
             service.clone(),
@@ -256,6 +266,7 @@ mod test {
             Some(password.clone()),
             false,
             PasswordGenerator::default(),
+            &mut writer,
         )
         .unwrap();
 
@@ -298,6 +309,8 @@ mod test {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+        let output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
 
         for (service, username, password) in passwords.iter() {
             add_password(
@@ -307,6 +320,7 @@ mod test {
                 Some(password.to_string()),
                 false,
                 PasswordGenerator::default(),
+                &mut writer,
             )
             .unwrap();
         }
@@ -372,6 +386,8 @@ mod test {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+        let output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
 
         for (service, username, password) in passwords_to_add.iter() {
             add_password(
@@ -381,6 +397,7 @@ mod test {
                 Some(password.to_string()),
                 false,
                 PasswordGenerator::default(),
+                &mut writer,
             )
             .unwrap();
         }

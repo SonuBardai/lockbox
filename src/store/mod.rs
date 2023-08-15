@@ -112,10 +112,11 @@ impl PasswordStore {
     pub fn print(&self, show_passwords: bool, color: Option<Color>, writer: &mut dyn Write) {
         if let Some(passwords) = self.passwords.as_ref() {
             if let Err(err) = passwords.print_all(show_passwords, color, writer) {
-                eprintln!("{}", err);
+                writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
             };
         } else {
-            println!("No passwords found!")
+            writeln!(writer, "No passwords found!")
+                .unwrap_or_else(|_| println!("No passwords found!"))
         }
     }
 
@@ -330,6 +331,7 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "master_password".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
         passwords
             .into_iter()
             .for_each(|(service, username, password)| {
@@ -340,6 +342,7 @@ mod tests {
                     Some(password.to_string()),
                     false,
                     PasswordGenerator::default(),
+                    &mut writer,
                 )
                 .unwrap()
             });
