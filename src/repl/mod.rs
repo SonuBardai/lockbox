@@ -123,6 +123,7 @@ fn handle_add_password<R: BufRead, W: Write>(
         None,
         generate,
         password_generator,
+        writer,
     ) {
         Ok(_) => writeln!(writer, "{}", "Password added successfully".green()).unwrap(),
         Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red()).unwrap(),
@@ -280,6 +281,7 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
         add_password(
             &mut password_store,
             "service".to_string(),
@@ -287,6 +289,7 @@ mod tests {
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
+            &mut writer,
         )
         .unwrap();
         let mut input = input;
@@ -378,6 +381,7 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
         add_password(
             &mut password_store,
             "service".to_string(),
@@ -385,6 +389,7 @@ mod tests {
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
+            &mut writer,
         )
         .unwrap();
         let mut output = Vec::new();
@@ -404,6 +409,7 @@ mod tests {
     fn test_handle_remove_password() {
         let mut password_store =
             PasswordStore::new("test".to_string(), "secret".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
         add_password(
             &mut password_store,
             "service".to_string(),
@@ -411,6 +417,7 @@ mod tests {
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
+            &mut writer,
         )
         .unwrap();
 
@@ -431,6 +438,7 @@ mod tests {
     fn test_handle_show_password() {
         let mut password_store =
             PasswordStore::new("test".to_string(), "secret".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
         add_password(
             &mut password_store,
             "service".to_string(),
@@ -438,6 +446,7 @@ mod tests {
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
+            &mut writer,
         )
         .unwrap();
 

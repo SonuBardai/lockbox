@@ -330,6 +330,7 @@ mod tests {
         let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "master_password".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
         passwords
             .into_iter()
             .for_each(|(service, username, password)| {
@@ -340,6 +341,7 @@ mod tests {
                     Some(password.to_string()),
                     false,
                     PasswordGenerator::default(),
+                    &mut writer,
                 )
                 .unwrap()
             });
