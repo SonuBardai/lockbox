@@ -5,14 +5,19 @@ pub mod io;
 use self::{
     args::{Args, Command, DEFAULT_PASSWORD_FILE_NAME},
     commands::{add_password, generate_password, list_passwords, remove_password, show_password},
-    io::{read_hidden_input, RpasswordPromptPassword},
+    io::{read_hidden_input, PromptPassword},
 };
 use crate::{repl::repl, store::PasswordStore};
 use colored::*;
 use passwords::PasswordGenerator;
 use std::io::{BufRead, Write};
 
-pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args) {
+pub fn run_cli<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    args: Args,
+) {
     match args.command {
         Command::Add {
             file_name,
@@ -34,8 +39,8 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
                 .numbers(numbers)
                 .symbols(symbols)
                 .strict(true);
-            let master = master
-                .unwrap_or_else(|| read_hidden_input("master password", &RpasswordPromptPassword));
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let mut password_store = match PasswordStore::new(file_name, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -44,13 +49,14 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
                 }
             };
             match add_password(
+                writer,
+                prompt_password,
                 &mut password_store,
                 service,
                 username,
                 password,
                 generate,
                 password_generator,
-                writer,
             ) {
                 Ok(_) => writeln!(writer, "{}", "Password added successfully".green()).unwrap(),
                 Err(err) => {
@@ -77,8 +83,8 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
             master,
             show_passwords,
         } => {
-            let master = master
-                .unwrap_or_else(|| read_hidden_input("master password", &RpasswordPromptPassword));
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let mut password_store = match PasswordStore::new(file_name, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -98,8 +104,8 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
             username,
             master,
         } => {
-            let master = master
-                .unwrap_or_else(|| read_hidden_input("master password", &RpasswordPromptPassword));
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let mut password_store = match PasswordStore::new(file_name, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -120,8 +126,8 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
             username,
             master,
         } => {
-            let master = master
-                .unwrap_or_else(|| read_hidden_input("master password", &RpasswordPromptPassword));
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let mut password_store = match PasswordStore::new(file_name, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -138,7 +144,7 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
         Command::Repl => repl(
             reader,
             writer,
-            &RpasswordPromptPassword,
+            prompt_password,
             DEFAULT_PASSWORD_FILE_NAME.to_string(),
         ),
     }
@@ -147,6 +153,7 @@ pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, args: Args)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cli::io::MockPromptPassword;
     use clap::Parser;
     use rstest::rstest;
     use std::io::Cursor;
@@ -200,14 +207,16 @@ mod tests {
             "test_master_password".to_string(),
         )
         .unwrap();
+        let mock_prompt_password = &MockPromptPassword::new();
         add_password(
+            &mut temp_writer,
+            mock_prompt_password,
             &mut password_store,
             "service".to_string(),
             Some("username".to_string()),
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
-            &mut temp_writer,
         )
         .unwrap();
 
@@ -217,12 +226,11 @@ mod tests {
         }
         let args = Args::parse_from(args);
 
-        println!("ARGS: {:?}", args);
-
         let mut input = Cursor::new(input);
         let mut output = Vec::new();
+        let mock_prompt_password = &MockPromptPassword::new();
 
-        run_cli(&mut input, &mut output, args);
+        run_cli(&mut input, &mut output, mock_prompt_password, args);
 
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains(expected_output));

@@ -4,7 +4,7 @@ use crate::{
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
         },
-        io::{read_hidden_input, read_terminal_input, PromptPassword, RpasswordPromptPassword},
+        io::{read_hidden_input, read_terminal_input, PromptPassword},
     },
     store::PasswordStore,
 };
@@ -27,17 +27,18 @@ pub fn repl<R: BufRead, W: Write>(
             return;
         }
     };
-    run_repl(reader, writer, password_store);
+    run_repl(reader, writer, prompt_password, password_store);
 }
 
 pub fn run_repl<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
+    prompt_password: &dyn PromptPassword,
     mut password_store: PasswordStore,
 ) {
     while let Err(err) = password_store.load() {
         writeln!(writer, "{}: {err}", "Failed to load password store".red()).unwrap();
-        let master = read_hidden_input("master password", &RpasswordPromptPassword);
+        let master = read_hidden_input("master password", prompt_password);
         password_store.update_master(master);
     }
     loop {
@@ -69,7 +70,9 @@ pub fn run_repl<R: BufRead, W: Write>(
         writeln!(writer, "\nEnter {message}").unwrap();
         let input = read_terminal_input(reader, writer, None);
         match input.as_str() {
-            "1" | "add" | "a" => handle_add_password(reader, writer, &mut password_store),
+            "1" | "add" | "a" => {
+                handle_add_password(reader, writer, prompt_password, &mut password_store)
+            }
             "2" | "generate" | "g" => handle_generate_password(writer),
             "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store),
             "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
@@ -82,6 +85,7 @@ pub fn run_repl<R: BufRead, W: Write>(
 fn handle_add_password<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
+    prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
     let message = [
@@ -117,13 +121,14 @@ fn handle_add_password<R: BufRead, W: Write>(
         .symbols(false)
         .strict(true);
     match add_password(
+        writer,
+        prompt_password,
         password_store,
         service,
         username,
         None,
         generate,
         password_generator,
-        writer,
     ) {
         Ok(_) => writeln!(writer, "{}", "Password added successfully".green()).unwrap(),
         Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red()).unwrap(),
@@ -282,20 +287,27 @@ mod tests {
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
+        let mock_prompt_password = &MockPromptPassword::new();
         add_password(
+            &mut writer,
+            mock_prompt_password,
             &mut password_store,
             "service".to_string(),
             Some("username".to_string()),
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
-            &mut writer,
         )
         .unwrap();
         let mut input = input;
         let mut output = Vec::new();
-
-        run_repl(&mut input, &mut output, password_store);
+        let mock_prompt_password = &MockPromptPassword::new();
+        run_repl(
+            &mut input,
+            &mut output,
+            mock_prompt_password,
+            password_store,
+        );
 
         let output_str = String::from_utf8(output).unwrap();
         let message = [
@@ -337,8 +349,14 @@ mod tests {
             PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
         let mut input = b"1\ntest_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
+        let mock_prompt_password = &MockPromptPassword::new();
 
-        handle_add_password(&mut input, &mut output, &mut password_store);
+        handle_add_password(
+            &mut input,
+            &mut output,
+            mock_prompt_password,
+            &mut password_store,
+        );
 
         let output_str = String::from_utf8(output).unwrap();
         let message = [
@@ -381,14 +399,16 @@ mod tests {
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
+        let mock_prompt_password = &MockPromptPassword::new();
         add_password(
+            &mut writer,
+            mock_prompt_password,
             &mut password_store,
             "service".to_string(),
             Some("username".to_string()),
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
-            &mut writer,
         )
         .unwrap();
         let mut output = Vec::new();
@@ -406,17 +426,21 @@ mod tests {
 
     #[test]
     fn test_handle_remove_password() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store =
-            PasswordStore::new("test".to_string(), "secret".to_string()).unwrap();
+            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
+        let mock_prompt_password = &MockPromptPassword::new();
         add_password(
+            &mut writer,
+            mock_prompt_password,
             &mut password_store,
             "service".to_string(),
             Some("username".to_string()),
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
-            &mut writer,
         )
         .unwrap();
 
@@ -435,17 +459,21 @@ mod tests {
 
     #[test]
     fn test_handle_show_password() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
         let mut password_store =
-            PasswordStore::new("test".to_string(), "secret".to_string()).unwrap();
+            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
+        let mock_prompt_password = &MockPromptPassword::new();
         add_password(
+            &mut writer,
+            mock_prompt_password,
             &mut password_store,
             "service".to_string(),
             Some("username".to_string()),
             Some("password".to_string()),
             false,
             PasswordGenerator::default(),
-            &mut writer,
         )
         .unwrap();
 

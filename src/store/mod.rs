@@ -128,7 +128,7 @@ impl PasswordStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::cli::commands::add_password;
+    use crate::cli::{commands::add_password, io::MockPromptPassword};
     use passwords::PasswordGenerator;
     use rstest::rstest;
     use tempfile::NamedTempFile;
@@ -332,17 +332,19 @@ mod tests {
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "master_password".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
+        let mock_prompt_password = &MockPromptPassword::new();
         passwords
             .into_iter()
             .for_each(|(service, username, password)| {
                 add_password(
+                    &mut writer,
+                    mock_prompt_password,
                     &mut password_store,
                     service.to_string(),
                     username.map(|u| u.to_string()),
                     Some(password.to_string()),
                     false,
                     PasswordGenerator::default(),
-                    &mut writer,
                 )
                 .unwrap()
             });

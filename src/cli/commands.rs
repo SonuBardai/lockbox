@@ -8,7 +8,7 @@ use colored::*;
 use passwords::PasswordGenerator;
 use std::io::Write;
 
-use super::io::RpasswordPromptPassword;
+use super::io::PromptPassword;
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
@@ -19,13 +19,14 @@ pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
 }
 
 pub fn add_password(
+    writer: &mut dyn Write,
+    prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
     password: Option<String>,
     generate: bool,
     password_generator: PasswordGenerator,
-    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     let password = if generate {
         let password = password_generator
@@ -44,7 +45,7 @@ pub fn add_password(
         }
         password
     } else {
-        password.unwrap_or_else(|| read_hidden_input("password", &RpasswordPromptPassword))
+        password.unwrap_or_else(|| read_hidden_input("password", prompt_password))
     };
     password_store
         .load()?
@@ -149,7 +150,7 @@ pub fn remove_password<W: Write>(
 
 #[cfg(test)]
 mod test {
-    use crate::pass::PasswordEntry;
+    use crate::{cli::io::MockPromptPassword, pass::PasswordEntry};
 
     use super::*;
     use passwords::PasswordGenerator;
@@ -179,14 +180,16 @@ mod test {
         let output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
+        let mock_prompt_password = &MockPromptPassword::new();
         let result = add_password(
+            &mut writer,
+            mock_prompt_password,
             &mut password_store,
             service.clone(),
             username.clone(),
             password.map(|s| s.to_string()),
             generate,
             password_generator,
-            &mut writer,
         );
         assert!(result.is_ok());
         assert!(password_store.find(service, username).is_some());
@@ -259,14 +262,16 @@ mod test {
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
         let output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
+        let mock_prompt_password = &MockPromptPassword::new();
         add_password(
+            &mut writer,
+            mock_prompt_password,
             &mut password_store,
             service.clone(),
             username.clone(),
             Some(password.clone()),
             false,
             PasswordGenerator::default(),
-            &mut writer,
         )
         .unwrap();
 
@@ -311,16 +316,18 @@ mod test {
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
         let output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
+        let mock_prompt_password = &MockPromptPassword::new();
 
         for (service, username, password) in passwords.iter() {
             add_password(
+                &mut writer,
+                mock_prompt_password,
                 &mut password_store,
                 service.to_string(),
                 Some(username.to_string()),
                 Some(password.to_string()),
                 false,
                 PasswordGenerator::default(),
-                &mut writer,
             )
             .unwrap();
         }
@@ -388,16 +395,18 @@ mod test {
         let mut password_store = PasswordStore::new(temp_file_name.to_string(), master).unwrap();
         let output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
+        let mock_prompt_password = &MockPromptPassword::new();
 
         for (service, username, password) in passwords_to_add.iter() {
             add_password(
+                &mut writer,
+                mock_prompt_password,
                 &mut password_store,
                 service.to_string(),
                 Some(username.to_string()),
                 Some(password.to_string()),
                 false,
                 PasswordGenerator::default(),
-                &mut writer,
             )
             .unwrap();
         }
