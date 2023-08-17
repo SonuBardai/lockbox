@@ -18,6 +18,8 @@ pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     Ok(())
 }
 
+// TODO: Refactor this code to pass fewer arguments
+#[allow(clippy::too_many_arguments)]
 pub fn add_password(
     writer: &mut dyn Write,
     prompt_password: &dyn PromptPassword,
