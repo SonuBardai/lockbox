@@ -526,4 +526,24 @@ mod tests {
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("password"));
     }
+
+    #[test]
+    fn test_handle_update_master_password() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store =
+            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let mut writer = Vec::new();
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .returning(|_| Ok("secret".to_string()));
+        mock_prompt_password
+            .expect_prompt_password()
+            .returning(|_| Ok("newmasterpassword".to_string()));
+        handle_update_master_password(&mut writer, &mock_prompt_password, &mut password_store);
+        let output_str = String::from_utf8(writer).unwrap();
+        println!("output_str: {output_str} end output");
+        assert!(output_str.contains(&"Master password updated successfully".green().to_string()));
+    }
 }
