@@ -357,4 +357,22 @@ mod tests {
         let output_str = String::from_utf8(output).unwrap();
         assert_eq!(output_str, expected_output);
     }
+
+    #[test]
+    fn test_update_master() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store = PasswordStore::new(
+            temp_file_name.to_string(),
+            "some_master_password".to_string(),
+        )
+        .unwrap();
+        password_store.update_master("new_master_password".to_string());
+        assert!(password_store.master_password == "new_master_password");
+        assert!(password_store.load().is_err());
+        if let Err(err) = password_store.load() {
+            err.to_string()
+                .contains("Master password incorrect. Please try again.");
+        };
+    }
 }

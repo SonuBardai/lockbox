@@ -150,6 +150,20 @@ pub fn remove_password<W: Write>(
     Ok(())
 }
 
+pub fn update_master_password<W: Write>(
+    writer: &mut W,
+    new_master_password: String,
+    password_store: &mut PasswordStore,
+) -> anyhow::Result<()> {
+    password_store
+        .load()?
+        .update_master(new_master_password)
+        .dump()?;
+    writeln!(writer, "{}", "Master password updated successfully".green())
+        .unwrap_or_else(|_| println!("{}", "Master password updated successfully".green()));
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use crate::{cli::io::MockPromptPassword, pass::PasswordEntry};
@@ -436,19 +450,19 @@ mod test {
     }
 
     #[test]
-    fn test_update_master() {
+    fn test_update_master_password() {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store = PasswordStore::new(
-            temp_file_name.to_string(),
-            "some_master_password".to_string(),
+        let mut output = Vec::new();
+        let mut password_store =
+            PasswordStore::new(temp_file_name.to_string(), "master".to_string()).unwrap();
+        update_master_password(
+            &mut output,
+            "new_master_password".to_string(),
+            &mut password_store,
         )
         .unwrap();
-        password_store.update_master("new_master_password".to_string());
-        assert!(password_store.load().is_err());
-        if let Err(err) = password_store.load() {
-            err.to_string()
-                .contains("Master password incorrect. Please try again.");
-        };
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains(&"Master password updated successfully".green().to_string()));
     }
 }
