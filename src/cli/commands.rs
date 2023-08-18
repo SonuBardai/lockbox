@@ -445,4 +445,13 @@ mod test {
             );
         }
     }
+
+    #[test]
+    fn test_update_master_password() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut password_store =
+            PasswordStore::new(temp_file_name.to_string(), "master".to_string()).unwrap();
+        update_master_password("new_master_password".to_string(), &mut password_store).unwrap();
+    }
 }
