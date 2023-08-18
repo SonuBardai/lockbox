@@ -4,7 +4,10 @@ pub mod io;
 
 use self::{
     args::{Args, Command, DEFAULT_PASSWORD_FILE_NAME},
-    commands::{add_password, generate_password, list_passwords, remove_password, show_password},
+    commands::{
+        add_password, generate_password, list_passwords, remove_password, show_password,
+        update_master_password,
+    },
     io::{read_hidden_input, PromptPassword},
 };
 use crate::{repl::repl, store::PasswordStore};
@@ -140,6 +143,31 @@ pub fn run_cli<R: BufRead, W: Write>(
                 Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red())
                     .unwrap_or_else(|_| println!("{}", format!("Error: {}", err).red())),
             }
+        }
+        Command::UpdateMaster {
+            file_name,
+            master,
+            new_master,
+        } => {
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
+            let new_master = new_master
+                .unwrap_or_else(|| read_hidden_input("new master password", prompt_password));
+            let mut password_store = match PasswordStore::new(file_name, master) {
+                Ok(password_store) => password_store,
+                Err(err) => {
+                    writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+                    return;
+                }
+            };
+            update_master_password(new_master, &mut password_store).unwrap_or_else(|err| {
+                writeln!(
+                    writer,
+                    "{}: {err}",
+                    "Failed to update master password".red()
+                )
+                .unwrap_or_else(|_| println!("{}: {err}", "Failed to update master password".red()))
+            });
         }
         Command::Repl => repl(
             reader,

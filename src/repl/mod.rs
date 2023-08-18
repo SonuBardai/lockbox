@@ -3,6 +3,7 @@ use crate::{
         args::Length,
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
+            update_master_password,
         },
         io::{read_hidden_input, read_terminal_input, PromptPassword},
     },
@@ -64,7 +65,12 @@ pub fn run_repl<R: BufRead, W: Write>(
                 "5".green().bold(),
                 "show".green().bold()
             ),
-            format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
+            format!(
+                "[{}] {} password",
+                "6".green().bold(),
+                "update master".green().bold()
+            ),
+            format!("[{}] {}", "7".green().bold(), "exit".green().bold()),
         ];
         let message = message.join(" ");
         writeln!(writer, "\nEnter {message}").unwrap();
@@ -77,6 +83,9 @@ pub fn run_repl<R: BufRead, W: Write>(
             "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store),
             "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
             "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
+            "6" | "update" | "u" => {
+                handle_update_master_password(writer, prompt_password, &mut password_store)
+            }
             _ => break,
         }
     }
@@ -172,6 +181,24 @@ fn handle_show_password<R: BufRead, W: Write>(
     if show_password(password_store, service, username, writer).is_err() {
         writeln!(writer, "Password not found").unwrap();
     };
+}
+
+fn handle_update_master_password<W: Write>(
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    password_store: &mut PasswordStore,
+) {
+    let new_master_password = read_hidden_input("new master password", prompt_password);
+    update_master_password(new_master_password, password_store).unwrap_or_else(|err| {
+        writeln!(
+            writer,
+            "{}: {err}",
+            "Failed to update master password".red()
+        )
+        .unwrap_or_else(|_| println!("{}: {err}", "Failed to update master password".red()))
+    });
+    writeln!(writer, "{}", "Master password updated successfully".green())
+        .unwrap_or_else(|_| println!("{}", "Master password updated successfully".green()));
 }
 
 #[cfg(test)]

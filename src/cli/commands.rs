@@ -150,6 +150,17 @@ pub fn remove_password<W: Write>(
     Ok(())
 }
 
+pub fn update_master_password(
+    new_master_password: String,
+    password_store: &mut PasswordStore,
+) -> anyhow::Result<()> {
+    password_store
+        .load()?
+        .update_master(new_master_password)
+        .dump()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use crate::{cli::io::MockPromptPassword, pass::PasswordEntry};

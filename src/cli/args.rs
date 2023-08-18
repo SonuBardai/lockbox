@@ -286,6 +286,27 @@ pub enum Command {
     },
 
     #[clap(
+        about = "Update the master password",
+        long_about = "Update the master password used to encrypt and decrypt the password store"
+    )]
+    UpdateMaster {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        file_name: String,
+        #[clap(
+            short,
+            long,
+            help = "The original master password used to encrypt and decrypt the password store."
+        )]
+        master: Option<String>,
+        #[clap(
+            short,
+            long,
+            help = "The new master password to be used to encrypt and decrypt the password store."
+        )]
+        new_master: Option<String>,
+    },
+
+    #[clap(
         about = "Start an interactive REPL session",
         long_about = "Use this command to start an interactive REPL (Read-Eval-Print Loop) session with your password manager. In this mode, you can enter commands interactively and see their results immediately."
     )]
