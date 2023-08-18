@@ -6,6 +6,8 @@ Lockbox is a command-line tool for generating and managing passwords. It uses st
 
 [![codecov](https://codecov.io/gh/SonuBardai/lockbox/branch/main/graph/badge.svg?token=XV39653NA5)](https://codecov.io/gh/SonuBardai/lockbox)
 
+Joined the Rust Lockbox discord server! Here's the [Invite](https://discord.gg/9f5MFhqY)
+
 ### Project Features
 - **Secure**: Lockbox uses the cutting-edge AES-GCM (Advanced Encryption Standard with Galoise Counter Mode) encryption algorithm to ensure that your passwords are always safe and secure. You can rest easy knowing that your data is protected by the best.
 - **One Master Key**: With Lockbox, you only need to remember one master password. The advanced PBKDF2 (Password-Based Key Derivation Function 2) key derivation function takes care of the rest, allowing you to access all your passwords with ease.
@@ -23,13 +25,14 @@ Lockbox is a command-line tool for generating and managing passwords. It uses st
 Usage: lockbox <COMMAND>
 
 Commands:
-  add       Add a new password to the password manager
-  generate  Generate a random password.
-  list      List all passwords in the password manager
-  remove    Remove a password from the password manager
-  show      Show a specific password in the password manager
-  repl      Start an interactive REPL session
-  help      Print this message or the help of the given subcommand(s)
+  add            Add a new password to the password manager
+  generate       Generate a random password.
+  list           List all passwords in the password manager
+  remove         Remove a password from the password manager
+  show           Show a specific password in the password manager
+  update-master  Update the master password
+  repl           Start an interactive REPL session
+  help           Print this message or the help of the given subcommand(s)
 ```
 
 - You can directly trigger the lockbox REPL by running `cargo run`
