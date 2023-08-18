@@ -260,7 +260,12 @@ mod tests {
                 "5".green().bold(),
                 "show".green().bold()
             ),
-            format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
+            format!(
+                "[{}] {} password",
+                "6".green().bold(),
+                "update master".green().bold()
+            ),
+            format!("[{}] {}", "7".green().bold(), "exit".green().bold()),
         ]
         .join(" ");
         assert!(output_str.contains(&format!("{}", "Welcome to L🦀CKBOX!\n".bold())));
@@ -271,7 +276,7 @@ mod tests {
         input,
         expected_output,
         case(
-            b"add\n1\ntest_service\ntest_username\n6\n" as &[u8],
+            b"add\n1\ntest_service\ntest_username\n7\n" as &[u8],
             vec![
                 format!(
                     "[{}] {} random password [{}] {} your own password [{}] {}",
@@ -359,7 +364,12 @@ mod tests {
                 "5".green().bold(),
                 "show".green().bold()
             ),
-            format!("[{}] {}", "6".green().bold(), "exit".green().bold()),
+            format!(
+                "[{}] {} password",
+                "6".green().bold(),
+                "update master".green().bold()
+            ),
+            format!("[{}] {}", "7".green().bold(), "exit".green().bold()),
         ]
         .join(" ");
         assert!(output_str.contains(&message));
