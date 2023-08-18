@@ -150,7 +150,8 @@ pub fn remove_password<W: Write>(
     Ok(())
 }
 
-pub fn update_master_password(
+pub fn update_master_password<W: Write>(
+    writer: &mut W,
     new_master_password: String,
     password_store: &mut PasswordStore,
 ) -> anyhow::Result<()> {
@@ -158,6 +159,8 @@ pub fn update_master_password(
         .load()?
         .update_master(new_master_password)
         .dump()?;
+    writeln!(writer, "{}", "Master password updated successfully".green())
+        .unwrap_or_else(|_| println!("{}", "Master password updated successfully".green()));
     Ok(())
 }
 
@@ -450,8 +453,16 @@ mod test {
     fn test_update_master_password() {
         let temp_file = NamedTempFile::new().unwrap();
         let temp_file_name = temp_file.path().to_str().unwrap();
+        let mut output = Vec::new();
         let mut password_store =
             PasswordStore::new(temp_file_name.to_string(), "master".to_string()).unwrap();
-        update_master_password("new_master_password".to_string(), &mut password_store).unwrap();
+        update_master_password(
+            &mut output,
+            "new_master_password".to_string(),
+            &mut password_store,
+        )
+        .unwrap();
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains(&"Master password updated successfully".green().to_string()));
     }
 }

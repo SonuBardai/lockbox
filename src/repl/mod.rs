@@ -189,7 +189,7 @@ fn handle_update_master_password<W: Write>(
     password_store: &mut PasswordStore,
 ) {
     let new_master_password = read_hidden_input("new master password", prompt_password);
-    update_master_password(new_master_password, password_store).unwrap_or_else(|err| {
+    update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
         writeln!(
             writer,
             "{}: {err}",
@@ -543,7 +543,6 @@ mod tests {
             .returning(|_| Ok("newmasterpassword".to_string()));
         handle_update_master_password(&mut writer, &mock_prompt_password, &mut password_store);
         let output_str = String::from_utf8(writer).unwrap();
-        println!("output_str: {output_str} end output");
         assert!(output_str.contains(&"Master password updated successfully".green().to_string()));
     }
 }

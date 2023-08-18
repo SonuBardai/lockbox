@@ -3,7 +3,7 @@ pub mod commands;
 pub mod io;
 
 use self::{
-    args::{Args, Command, DEFAULT_PASSWORD_FILE_NAME},
+    args::{Args, Command},
     commands::{
         add_password, generate_password, list_passwords, remove_password, show_password,
         update_master_password,
@@ -160,21 +160,18 @@ pub fn run_cli<R: BufRead, W: Write>(
                     return;
                 }
             };
-            update_master_password(new_master, &mut password_store).unwrap_or_else(|err| {
+            update_master_password(writer, new_master, &mut password_store).unwrap_or_else(|err| {
                 writeln!(
                     writer,
                     "{}: {err}",
                     "Failed to update master password".red()
                 )
-                .unwrap_or_else(|_| println!("{}: {err}", "Failed to update master password".red()))
+                .unwrap_or_else(|_| {
+                    println!("{}: {err}", "Failed to update master password".red())
+                });
             });
         }
-        Command::Repl => repl(
-            reader,
-            writer,
-            prompt_password,
-            DEFAULT_PASSWORD_FILE_NAME.to_string(),
-        ),
+        Command::Repl { file_name } => repl(reader, writer, prompt_password, file_name),
     }
 }
 
@@ -222,7 +219,14 @@ mod tests {
             b"",
             &format!("Password: {}", "password".blue()),
             true
+        ),
+        case(
+            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
+            b"",
+            &"Master password updated successfully".green().to_string(),
+            true
         )
+
     )]
     fn test_run_cli(args: Vec<&str>, input: &[u8], expected_output: &str, use_temp_file: bool) {
         let mut args = args;
@@ -262,5 +266,53 @@ mod tests {
 
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains(expected_output));
+    }
+
+    #[test]
+    fn test_run_cli_repl() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_name = temp_file.path().to_str().unwrap();
+        let args = Args::parse_from(vec!["lockbox", "repl", "--file-name", temp_file_name]);
+        let mut input = b"exit\n" as &[u8];
+        let mut output = Vec::new();
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .returning(|_| Ok("password\n".to_string()));
+        run_cli(&mut input, &mut output, &mock_prompt_password, args);
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains(&"Welcome to L🦀CKBOX!\n".bold().to_string()));
+        assert!(output_str.contains(
+            &[
+                format!("[{}] {} password", "1".green().bold(), "add".green().bold()),
+                format!(
+                    "[{}] {} random password",
+                    "2".green().bold(),
+                    "generate".green().bold()
+                ),
+                format!(
+                    "[{}] {} passwords",
+                    "3".green().bold(),
+                    "list".green().bold()
+                ),
+                format!(
+                    "[{}] {} password",
+                    "4".green().bold(),
+                    "remove".green().bold()
+                ),
+                format!(
+                    "[{}] {} password",
+                    "5".green().bold(),
+                    "show".green().bold()
+                ),
+                format!(
+                    "[{}] {} password",
+                    "6".green().bold(),
+                    "update master".green().bold()
+                ),
+                format!("[{}] {}", "7".green().bold(), "exit".green().bold()),
+            ]
+            .join(" ")
+        ));
     }
 }

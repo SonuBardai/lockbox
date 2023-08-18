@@ -310,7 +310,10 @@ pub enum Command {
         about = "Start an interactive REPL session",
         long_about = "Use this command to start an interactive REPL (Read-Eval-Print Loop) session with your password manager. In this mode, you can enter commands interactively and see their results immediately."
     )]
-    Repl,
+    Repl {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        file_name: String,
+    },
 }
 
 #[cfg(test)]
