@@ -1,8 +1,20 @@
 [package]
+authors = ["SonuBardai <sonubardai9@gmail.com>"]
+categories = ["command-line-utilities", "cryptography"]
 name = "lock_box"
 description = "A command-line tool for generating and managing passwords."
+homepage = "https://github.com/SonuBardai/lockbox"
+repository = "https://github.com/SonuBardai/lockbox"
+license = "MIT"
+keywords = [
+    "password",
+    "security",
+    "cli",
+    "tool",
+    "password-manager",
+    "password-generator",
+]
 version = "0.1.0"
-authors = ["SonuBardai <sonubardai9@gmail.com>"]
 edition = "2021"
 readme = "README.md"
 

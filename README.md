@@ -42,26 +42,26 @@ Welcome to L🦀CKBOX!
 Please enter the master password
 >> 
 
-Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit
->> 1
+Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] update master password [7] exit
+>> add
 [1] generate random password [2] enter your own password [3] cancel
 >> 1
-5NqTd62DSpthlwOO (Copied to clipboard)
 Please enter the service name
->> github     
+>> github
 Please enter the username (Optional)
 >> MyAwesomeGithubProfile
+Random password generated and copied to clipboard
 Password added successfully
 
-Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit
+Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] update master password [7] exit
 >> show
 Please enter the service name
 >> github
 Please enter the username (Optional)
 >> MyAwesomeGithubProfile
-Password: 5NqTd62DSpthlwOO
+Password: RkZpFSRPHlFHpK7y
 
-Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] exit
+Enter [1] add password [2] generate random password [3] list passwords [4] remove password [5] show password [6] update master password [7] exit
 >> exit
 ```
 
