@@ -356,6 +356,10 @@ mod test {
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
 
+        if passwords.is_empty() {
+            assert!(output_str.contains(&"No passwords found!".yellow().to_string()));
+        }
+
         for (service, username, password) in passwords.iter() {
             if show_passwords {
                 assert!(output_str.contains(&format!(

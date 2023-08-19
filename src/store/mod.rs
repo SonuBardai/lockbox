@@ -114,9 +114,6 @@ impl PasswordStore {
             if let Err(err) = passwords.print_all(show_passwords, color, writer) {
                 writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
             };
-        } else {
-            writeln!(writer, "No passwords found!")
-                .unwrap_or_else(|_| println!("No passwords found!"))
         }
     }
 

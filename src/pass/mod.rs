@@ -84,22 +84,53 @@ impl Passwords {
         color: Option<Color>,
         writer: &mut dyn Write,
     ) -> anyhow::Result<()> {
-        for pwd in self.0.iter() {
-            if show_passwords {
-                if let Some(username) = &pwd.username {
+        if !self.0.is_empty() {
+            for pwd in self.0.iter() {
+                if show_passwords {
+                    if let Some(username) = &pwd.username {
+                        if let Some(color) = color {
+                            writeln!(
+                                writer,
+                                "Service: {}, Username: {}, Password: {}",
+                                pwd.service.color(color),
+                                username.color(color),
+                                pwd.password.color(color)
+                            )?;
+                        } else {
+                            writeln!(
+                                writer,
+                                "Service: {}, Username: {}, Password: {}",
+                                pwd.service, username, pwd.password
+                            )?;
+                        }
+                    } else if let Some(color) = color {
+                        writeln!(
+                            writer,
+                            "Service: {}, Password: {}",
+                            pwd.service.color(color),
+                            pwd.password.color(color)
+                        )?;
+                    } else {
+                        writeln!(
+                            writer,
+                            "Service: {}, Password: {}",
+                            pwd.service, pwd.password
+                        )?;
+                    }
+                } else if let Some(username) = &pwd.username {
                     if let Some(color) = color {
                         writeln!(
                             writer,
                             "Service: {}, Username: {}, Password: {}",
                             pwd.service.color(color),
                             username.color(color),
-                            pwd.password.color(color)
+                            "***".color(color)
                         )?;
                     } else {
                         writeln!(
                             writer,
-                            "Service: {}, Username: {}, Password: {}",
-                            pwd.service, username, pwd.password
+                            "Service: {}, Username: {}, Password: ***",
+                            pwd.service, username
                         )?;
                     }
                 } else if let Some(color) = color {
@@ -107,41 +138,15 @@ impl Passwords {
                         writer,
                         "Service: {}, Password: {}",
                         pwd.service.color(color),
-                        pwd.password.color(color)
-                    )?;
-                } else {
-                    writeln!(
-                        writer,
-                        "Service: {}, Password: {}",
-                        pwd.service, pwd.password
-                    )?;
-                }
-            } else if let Some(username) = &pwd.username {
-                if let Some(color) = color {
-                    writeln!(
-                        writer,
-                        "Service: {}, Username: {}, Password: {}",
-                        pwd.service.color(color),
-                        username.color(color),
                         "***".color(color)
                     )?;
                 } else {
-                    writeln!(
-                        writer,
-                        "Service: {}, Username: {}, Password: ***",
-                        pwd.service, username
-                    )?;
+                    writeln!(writer, "Service: {}, Password: ***", pwd.service)?;
                 }
-            } else if let Some(color) = color {
-                writeln!(
-                    writer,
-                    "Service: {}, Password: {}",
-                    pwd.service.color(color),
-                    "***".color(color)
-                )?;
-            } else {
-                writeln!(writer, "Service: {}, Password: ***", pwd.service)?;
             }
+        } else {
+            writeln!(writer, "{}", "No passwords found!".yellow())
+                .unwrap_or_else(|_| println!("No passwords found!"))
         }
         Ok(())
     }
