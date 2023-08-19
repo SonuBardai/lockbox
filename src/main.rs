@@ -1,5 +1,5 @@
 use clap::Parser;
-use lockbox::{
+use lock_box::{
     cli::{
         args::{Args, DEFAULT_PASSWORD_FILE_NAME},
         io::RpasswordPromptPassword,
