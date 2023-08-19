@@ -41,8 +41,10 @@ Commands:
   help           Print this message or the help of the given subcommand(s)
 ```
 
-- You can directly trigger the lockbox REPL by running `cargo run`
+- You can directly trigger the lockbox REPL by simply running `lockbox`
 ```rust
+$ lockbox
+
 Welcome to L🦀CKBOX!
 
 Please enter the master password
