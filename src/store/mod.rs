@@ -139,7 +139,7 @@ mod tests {
         assert_eq!(store.file_path, temp_file);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(PathBuf::from(temp_file).exists());
+        assert!(temp_file.exists());
     }
 
     #[test]
