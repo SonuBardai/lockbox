@@ -1,6 +1,6 @@
 use crate::{
     cli::{
-        args::Length,
+        args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
             update_master_password,
@@ -11,7 +11,10 @@ use crate::{
 };
 use colored::*;
 use passwords::PasswordGenerator;
-use std::io::{BufRead, Write};
+use std::{
+    io::{BufRead, Write},
+    path::PathBuf,
+};
 
 pub fn repl<R: BufRead, W: Write>(
     reader: &mut R,
@@ -20,8 +23,10 @@ pub fn repl<R: BufRead, W: Write>(
     file_name: String,
 ) {
     writeln!(writer, "{}", "Welcome to L🦀CKBOX!\n".bold()).unwrap();
+    let file_path =
+        get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
     let master = read_hidden_input("master password", prompt_password);
-    let password_store = match PasswordStore::new(file_name, master) {
+    let password_store = match PasswordStore::new(file_path, master) {
         Ok(password_store) => password_store,
         Err(err) => {
             writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
@@ -314,10 +319,8 @@ mod tests {
         ),
     )]
     fn test_run_repl(input: &[u8], expected_output: Vec<String>) {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
         let mock_prompt_password = &MockPromptPassword::new();
         add_password(
@@ -380,10 +383,8 @@ mod tests {
 
     #[test]
     fn test_handle_add_password() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut input = b"1\ntest_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
         let mock_prompt_password = &MockPromptPassword::new();
@@ -431,10 +432,8 @@ mod tests {
 
     #[test]
     fn test_handle_list_passwords() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
         let mock_prompt_password = &MockPromptPassword::new();
         add_password(
@@ -463,10 +462,8 @@ mod tests {
 
     #[test]
     fn test_handle_remove_password() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
         let mock_prompt_password = &MockPromptPassword::new();
         add_password(
@@ -496,10 +493,8 @@ mod tests {
 
     #[test]
     fn test_handle_show_password() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
         let mock_prompt_password = &MockPromptPassword::new();
         add_password(
@@ -529,10 +524,8 @@ mod tests {
 
     #[test]
     fn test_handle_update_master_password() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "secret".to_string()).unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = Vec::new();
         let mut mock_prompt_password = MockPromptPassword::new();
         mock_prompt_password

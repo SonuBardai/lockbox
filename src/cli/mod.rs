@@ -3,7 +3,7 @@ pub mod commands;
 pub mod io;
 
 use self::{
-    args::{Args, Command},
+    args::{get_password_store_path, Args, Command, DEFAULT_PASSWORD_FILENAME},
     commands::{
         add_password, generate_password, list_passwords, remove_password, show_password,
         update_master_password,
@@ -13,7 +13,10 @@ use self::{
 use crate::{repl::repl, store::PasswordStore};
 use colored::*;
 use passwords::PasswordGenerator;
-use std::io::{BufRead, Write};
+use std::{
+    io::{BufRead, Write},
+    path::PathBuf,
+};
 
 pub fn run_cli<R: BufRead, W: Write>(
     reader: &mut R,
@@ -44,7 +47,9 @@ pub fn run_cli<R: BufRead, W: Write>(
                 .strict(true);
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let mut password_store = match PasswordStore::new(file_name, master) {
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
                     writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
@@ -88,7 +93,9 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let mut password_store = match PasswordStore::new(file_name, master) {
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
                     writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
@@ -109,7 +116,9 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let mut password_store = match PasswordStore::new(file_name, master) {
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
                     writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
@@ -131,7 +140,9 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let mut password_store = match PasswordStore::new(file_name, master) {
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
                     writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
@@ -153,7 +164,9 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let new_master = new_master
                 .unwrap_or_else(|| read_hidden_input("new master password", prompt_password));
-            let mut password_store = match PasswordStore::new(file_name, master) {
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
                     writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
@@ -230,15 +243,11 @@ mod tests {
     )]
     fn test_run_cli(args: Vec<&str>, input: &[u8], expected_output: &str, use_temp_file: bool) {
         let mut args = args;
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut temp_writer = std::io::Cursor::new(Vec::new());
 
-        let mut password_store = PasswordStore::new(
-            temp_file_name.to_string(),
-            "test_master_password".to_string(),
-        )
-        .unwrap();
+        let mut password_store =
+            PasswordStore::new(temp_file.clone(), "test_master_password".to_string()).unwrap();
         let mock_prompt_password = &MockPromptPassword::new();
         add_password(
             &mut temp_writer,
@@ -252,9 +261,10 @@ mod tests {
         )
         .unwrap();
 
+        let temp_file_str = temp_file.to_string_lossy().to_string();
         if use_temp_file {
             args.push("--file-name");
-            args.push(temp_file_name);
+            args.push(&temp_file_str);
         }
         let args = Args::parse_from(args);
 
