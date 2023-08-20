@@ -1,3 +1,4 @@
+use crate::cli::args::get_default_password_filename;
 use crate::pass::PasswordEntry;
 use crate::{
     crypto::{encrypt_contents, get_cipher, get_random_salt},
@@ -7,7 +8,7 @@ use aes_gcm::aead::Aead;
 use colored::{Color, Colorize};
 use std::fs;
 use std::io::Write;
-use std::path::Path;
+use std::path::PathBuf;
 
 pub struct PasswordStore {
     pub file_name: String,
@@ -17,20 +18,18 @@ pub struct PasswordStore {
 
 impl PasswordStore {
     pub fn new(file_name: String, master_password: String) -> anyhow::Result<Self> {
-        let file_path = Path::new(&file_name);
-        if !file_path.exists() {
-            fs::File::create(file_path)?;
-        }
-        if fs::metadata(&file_name)?.len() == 0 {
+        let file_path = get_default_password_filename(file_name.to_string())
+            .unwrap_or(PathBuf::from(&file_name));
+        if fs::metadata(&file_path)?.len() == 0 {
             let salt = get_random_salt();
             let (empty_json, nonce) = encrypt_contents("[]", &master_password, &salt);
             let mut content = salt.to_vec();
             content.extend(nonce);
             content.extend(empty_json);
-            fs::write(&file_name, content)?;
+            fs::write(&file_path, content)?;
         }
         let store = Self {
-            file_name: file_name.to_string(),
+            file_name: file_path.to_string_lossy().to_string(),
             master_password,
             passwords: None,
         };
@@ -143,7 +142,7 @@ mod tests {
         assert_eq!(store.file_name, temp_file_name);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(Path::new(temp_file_name).exists());
+        assert!(PathBuf::from(temp_file_name).exists());
     }
 
     #[test]
@@ -158,7 +157,7 @@ mod tests {
         assert_eq!(store.file_name, temp_file_name.to_str().unwrap());
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(Path::new(temp_file_name.to_str().unwrap()).exists());
+        assert!(PathBuf::from(temp_file_name.to_str().unwrap()).exists());
     }
 
     #[rstest]

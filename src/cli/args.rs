@@ -1,6 +1,8 @@
+use anyhow::Ok;
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use colored::Colorize;
-use std::fmt::Display;
+use std::{env, fs::create_dir_all};
+use std::{fmt::Display, path::PathBuf};
 use terminal_size::{terminal_size, Height, Width};
 const ASCII_ART_ABOUT: &str = r#"
             ..7J?..   ..^JJ7..
@@ -24,7 +26,18 @@ const ASCII_ART_ABOUT: &str = r#"
 
 "#;
 const ABOUT: &str = "L🦀CKBOX: A password manager and generator";
-pub const DEFAULT_PASSWORD_FILE_NAME: &str = "passwords";
+pub const DEFAULT_PASSWORD_FILENAME: &str = "store";
+
+pub fn get_default_password_filename(file_name: String) -> anyhow::Result<PathBuf> {
+    #[cfg(not(windows))]
+    let home_dir = env::var("HOME")?;
+    #[cfg(windows)]
+    let home_dir = env::var("USERPROFILE")?;
+    let home_path = PathBuf::from(home_dir);
+    let file_path = home_path.join(".lockbox").join(file_name);
+    create_dir_all(file_path.parent().unwrap())?;
+    Ok(file_path)
+}
 
 fn get_about(terminal_size: Option<(Width, Height)>) -> String {
     let about = ABOUT.bold();
@@ -125,7 +138,7 @@ pub enum Command {
         long_about = "Use this command to add a new password entry to your password store. You can specify the service, username, and password, or choose to generate a new password with custom properties. You can also specify the name of the password file and the master password used to encrypt the password store."
     )]
     Add {
-        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use.")]
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use.")]
         file_name: String,
         #[clap(
             short,
@@ -227,7 +240,7 @@ pub enum Command {
         long_about = "Use this command to list all passwords stored in your password manager. You can specify the name of the password file and the master password used to decrypt the password store. You can also choose whether to show the actual passwords or just the service and username information."
     )]
     List {
-        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
         file_name: String,
         #[clap(
             short,
@@ -244,7 +257,7 @@ pub enum Command {
         long_about = "Use this command to remove a password entry from your password store. You can specify the service and username associated with the password you want to remove. You can also specify the name of the password file and the master password used to encrypt the password store."
     )]
     Remove {
-        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
         file_name: String,
         #[clap(
             short,
@@ -267,7 +280,7 @@ pub enum Command {
         long_about = "Use this command to show a specific password stored in your password manager. You can specify the service and username associated with the password you want to show. You can also specify the name of the password file and the master password used to decrypt the password store."
     )]
     Show {
-        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
         file_name: String,
         #[clap(
             short,
@@ -290,7 +303,7 @@ pub enum Command {
         long_about = "Update the master password used to encrypt and decrypt the password store"
     )]
     UpdateMaster {
-        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
         file_name: String,
         #[clap(
             short,
@@ -311,7 +324,7 @@ pub enum Command {
         long_about = "Use this command to start an interactive REPL (Read-Eval-Print Loop) session with your password manager. In this mode, you can enter commands interactively and see their results immediately."
     )]
     Repl {
-        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILE_NAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
         file_name: String,
     },
 }
@@ -373,7 +386,7 @@ mod test {
         &["lockbox", "add", "-s", "test_service", "-u", "test_username", "-p", "test_password"],
         Args {
             command: Command::Add {
-                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
+                file_name: DEFAULT_PASSWORD_FILENAME.to_string(),
                 service: "test_service".to_string(),
                 username: Some("test_username".to_string()),
                 password: Some("test_password".to_string()),
@@ -404,7 +417,7 @@ mod test {
         &["lockbox", "list", "--master", "master_password"],
         Args {
             command: Command::List {
-                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
+                file_name: DEFAULT_PASSWORD_FILENAME.to_string(),
                 master: Some("master_password".to_string()),
                 show_passwords: false,
             },
@@ -414,7 +427,7 @@ mod test {
         &["lockbox", "remove", "-s", "service"],
         Args {
             command: Command::Remove {
-                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
+                file_name: DEFAULT_PASSWORD_FILENAME.to_string(),
                 service: "service".to_string(),
                 username: None,
                 master: None,
@@ -425,7 +438,7 @@ mod test {
         &["lockbox", "show", "-s", "service"],
         Args {
             command: Command::Show {
-                file_name: DEFAULT_PASSWORD_FILE_NAME.to_string(),
+                file_name: DEFAULT_PASSWORD_FILENAME.to_string(),
                 service: "service".to_string(),
                 username: None,
                 master: None,
