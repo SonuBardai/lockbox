@@ -1,4 +1,3 @@
-use crate::cli::args::get_default_password_filename;
 use crate::pass::PasswordEntry;
 use crate::{
     crypto::{encrypt_contents, get_cipher, get_random_salt},
@@ -10,26 +9,26 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
+const EMPTY_PASSWORDS: &str = "[]";
+
 pub struct PasswordStore {
-    pub file_name: String,
+    pub file_path: PathBuf,
     master_password: String,
     passwords: Option<Passwords>,
 }
 
 impl PasswordStore {
-    pub fn new(file_name: String, master_password: String) -> anyhow::Result<Self> {
-        let file_path = get_default_password_filename(file_name.to_string())
-            .unwrap_or(PathBuf::from(&file_name));
-        if fs::metadata(&file_path)?.len() == 0 {
+    pub fn new(file_path: PathBuf, master_password: String) -> anyhow::Result<Self> {
+        if !file_path.exists() || fs::metadata(&file_path)?.len() == 0 {
             let salt = get_random_salt();
-            let (empty_json, nonce) = encrypt_contents("[]", &master_password, &salt);
+            let (empty_json, nonce) = encrypt_contents(EMPTY_PASSWORDS, &master_password, &salt);
             let mut content = salt.to_vec();
             content.extend(nonce);
             content.extend(empty_json);
             fs::write(&file_path, content)?;
         }
         let store = Self {
-            file_name: file_path.to_string_lossy().to_string(),
+            file_path,
             master_password,
             passwords: None,
         };
@@ -37,7 +36,7 @@ impl PasswordStore {
     }
 
     pub fn load(&mut self) -> anyhow::Result<&mut Self> {
-        let encrypted_file = std::fs::read(&self.file_name)?;
+        let encrypted_file = std::fs::read(&self.file_path)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
         let nonce = &encrypted_file[16..28];
@@ -52,7 +51,7 @@ impl PasswordStore {
     }
 
     pub fn dump(&mut self) -> anyhow::Result<&mut Self> {
-        let encrypted_file = std::fs::read(&self.file_name)?;
+        let encrypted_file = std::fs::read(&self.file_path)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
         let nonce = &encrypted_file[16..28];
@@ -63,7 +62,7 @@ impl PasswordStore {
         let mut content = salt.to_vec();
         content.extend(nonce);
         content.extend(encrypted_text);
-        std::fs::write(&self.file_name, content)?;
+        std::fs::write(&self.file_path, content)?;
         Ok(self)
     }
 
@@ -134,30 +133,24 @@ mod tests {
 
     #[test]
     fn test_new_password_store() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap();
-        assert_eq!(store.file_name, temp_file_name);
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        assert_eq!(store.file_path, temp_file);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(PathBuf::from(temp_file_name).exists());
+        assert!(PathBuf::from(temp_file).exists());
     }
 
     #[test]
     fn test_new_password_store_with_nonexistent_file() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let temp_file_name = temp_dir.path().join("nonexistent_file");
-        let store = PasswordStore::new(
-            temp_file_name.to_str().unwrap().to_string(),
-            TEST_MASTER_PASSWORD.to_string(),
-        )
-        .unwrap();
-        assert_eq!(store.file_name, temp_file_name.to_str().unwrap());
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let store =
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        assert_eq!(store.file_path, temp_file);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(PathBuf::from(temp_file_name.to_str().unwrap()).exists());
+        assert!(PathBuf::from(temp_file.to_str().unwrap()).exists());
     }
 
     #[rstest]
@@ -186,11 +179,8 @@ mod tests {
         ])
     )]
     fn test_load_after_store_passwords(#[case] test_passwords: Vec<PasswordEntry>) {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store = PasswordStore::new(temp_file, TEST_MASTER_PASSWORD.to_string()).unwrap();
         store.load().unwrap();
         test_passwords.iter().for_each(|test_password| {
             store
@@ -275,11 +265,8 @@ mod tests {
         expected_password: Option<PasswordEntry>,
         expect_password_found: bool,
     ) {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store = PasswordStore::new(temp_file, TEST_MASTER_PASSWORD.to_string()).unwrap();
         store.load().unwrap();
         store.passwords = Some(test_passwords.into());
         let found_password = store.find(service.to_string(), username.map(|u| u.to_string()));
@@ -323,10 +310,9 @@ mod tests {
         passwords: Vec<(&str, Option<&str>, &str)>,
         expected_output: String,
     ) {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store =
-            PasswordStore::new(temp_file_name.to_string(), "master_password".to_string()).unwrap();
+            PasswordStore::new(temp_file, "master_password".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
         let mock_prompt_password = &MockPromptPassword::new();
         passwords
@@ -356,13 +342,9 @@ mod tests {
 
     #[test]
     fn test_update_master() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut password_store = PasswordStore::new(
-            temp_file_name.to_string(),
-            "some_master_password".to_string(),
-        )
-        .unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store =
+            PasswordStore::new(temp_file, "some_master_password".to_string()).unwrap();
         password_store.update_master("new_master_password".to_string());
         assert!(password_store.master_password == "new_master_password");
         assert!(password_store.load().is_err());
