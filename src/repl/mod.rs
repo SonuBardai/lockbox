@@ -1,6 +1,6 @@
 use crate::{
     cli::{
-        args::{get_default_password_filename, Length, DEFAULT_PASSWORD_FILENAME},
+        args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
             update_master_password,
@@ -23,8 +23,8 @@ pub fn repl<R: BufRead, W: Write>(
     file_name: String,
 ) {
     writeln!(writer, "{}", "Welcome to L🦀CKBOX!\n".bold()).unwrap();
-    let file_path = get_default_password_filename(file_name)
-        .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+    let file_path =
+        get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
     let master = read_hidden_input("master password", prompt_password);
     let password_store = match PasswordStore::new(file_path, master) {
         Ok(password_store) => password_store,

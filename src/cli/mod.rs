@@ -3,7 +3,7 @@ pub mod commands;
 pub mod io;
 
 use self::{
-    args::{get_default_password_filename, Args, Command, DEFAULT_PASSWORD_FILENAME},
+    args::{get_password_store_path, Args, Command, DEFAULT_PASSWORD_FILENAME},
     commands::{
         add_password, generate_password, list_passwords, remove_password, show_password,
         update_master_password,
@@ -47,7 +47,7 @@ pub fn run_cli<R: BufRead, W: Write>(
                 .strict(true);
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let file_path = get_default_password_filename(file_name)
+            let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
@@ -93,7 +93,7 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let file_path = get_default_password_filename(file_name)
+            let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
@@ -116,7 +116,7 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let file_path = get_default_password_filename(file_name)
+            let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
@@ -140,7 +140,7 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let file_path = get_default_password_filename(file_name)
+            let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
@@ -164,7 +164,7 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let new_master = new_master
                 .unwrap_or_else(|| read_hidden_input("new master password", prompt_password));
-            let file_path = get_default_password_filename(file_name)
+            let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,

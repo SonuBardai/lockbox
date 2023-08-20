@@ -27,7 +27,7 @@ const ASCII_ART_ABOUT: &str = r#"
 const ABOUT: &str = "L🦀CKBOX: A password manager and generator";
 pub const DEFAULT_PASSWORD_FILENAME: &str = "store";
 
-pub fn get_default_password_filename(file_name: String) -> anyhow::Result<PathBuf> {
+pub fn get_password_store_path(file_name: String) -> anyhow::Result<PathBuf> {
     #[cfg(not(windows))]
     let home_dir = env::var("HOME")?;
     #[cfg(windows)]
@@ -332,6 +332,7 @@ pub enum Command {
 mod test {
     use super::*;
     use rstest::rstest;
+    use tempfile::NamedTempFile;
 
     #[rstest(
         input,
@@ -459,5 +460,20 @@ mod test {
     )]
     fn test_length_get_val(input: Length, expected: usize) {
         assert_eq!(input.get_val(), expected)
+    }
+
+    #[test]
+    fn test_get_password_store_path() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let file_name = temp_file
+            .path()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let file_path = get_password_store_path(file_name.clone()).unwrap();
+        assert_eq!(file_path.file_name().unwrap().to_str().unwrap(), file_name);
+        assert!(file_path.to_string_lossy().contains(".lockbox"));
     }
 }
