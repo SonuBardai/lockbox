@@ -2,8 +2,8 @@ name: Build and Release
 
 on:
   push:
-    paths:
-      - "Cargo.toml"
+    # paths:
+    #   - "Cargo.toml"
 
 jobs:
   check_version:
