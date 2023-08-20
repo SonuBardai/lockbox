@@ -51,6 +51,9 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Install target
+        run: rustup target add ${{ matrix.target }}
+
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
@@ -77,6 +80,13 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
           echo "::set-output name=version::$VERSION"
 
+      - name: Download Artifacts
+        uses: dawidd6/action-download-artifact@v2.14.0
+        with:
+          workflow: ${{ github.workflow }}.yml
+          workflow_conclusion: success
+          path: artifacts
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1.1.4
@@ -87,13 +97,6 @@ jobs:
           release_name: Release v${{ steps.version.outputs.version }}
           body_path: <(echo "Release of version ${{ steps.version.outputs.version }}")
           draft: false
-
-      - name: Download Artifacts
-        uses: dawidd6/action-download-artifact@v2.14.0
-        with:
-          workflow: ${{ github.workflow }}.yml
-          workflow_conclusion: success
-          path: artifacts
 
       - name: Upload Artifacts
         run: |
