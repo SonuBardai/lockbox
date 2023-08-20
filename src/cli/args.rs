@@ -1,4 +1,3 @@
-use anyhow::Ok;
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use colored::Colorize;
 use std::{env, fs::create_dir_all};
