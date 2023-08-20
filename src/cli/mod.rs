@@ -126,8 +126,7 @@ pub fn run_cli<R: BufRead, W: Write>(
                 }
             };
             match remove_password(writer, &mut password_store, service, username) {
-                Ok(_) => writeln!(writer, "Password removed successfully")
-                    .unwrap_or_else(|_| println!("Password removed successfully")),
+                Ok(_) => (),
                 Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red())
                     .unwrap_or_else(|_| println!("{}", format!("Error: {}", err).red())),
             }
