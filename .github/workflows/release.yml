@@ -24,10 +24,10 @@ jobs:
           echo "::set-output name=version_changed::$VERSION_CHANGED"
 
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build
     runs-on: ubuntu-latest
     needs: check_version
-    if: needs.check_version.outputs.version_changed == '1'
+    # if: needs.check_version.outputs.version_changed == '1'
     strategy:
       matrix:
         include:
@@ -64,7 +64,7 @@ jobs:
     needs:
       - check_version
       - build
-    if: needs.check_version.outputs.version_changed == '1'
+    # if: needs.check_version.outputs.version_changed == '1'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
