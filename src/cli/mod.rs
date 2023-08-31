@@ -223,7 +223,7 @@ mod tests {
         case(
             vec!["lockbox", "remove", "--service", "service", "--username", "username", "--master", "test_master_password"],
             b"",
-            "Password removed successfully\n",
+            "Password deleted",
             true
         ),
         case(
