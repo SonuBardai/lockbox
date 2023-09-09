@@ -8,10 +8,9 @@ use self::{
         add_password, generate_password, list_passwords, remove_password, show_password,
         update_master_password,
     },
-    io::{read_hidden_input, PromptPassword},
+    io::{print, read_hidden_input, MessageType, PromptPassword},
 };
 use crate::{repl::repl, store::PasswordStore};
-use colored::*;
 use passwords::PasswordGenerator;
 use std::{
     io::{BufRead, Write},
@@ -66,10 +65,12 @@ pub fn run_cli<R: BufRead, W: Write>(
                 generate,
                 password_generator,
             ) {
-                Ok(_) => writeln!(writer, "{}", "Password added successfully".green()).unwrap(),
-                Err(err) => {
-                    writeln!(writer, "{}", format!("Error: {}", err).red()).unwrap();
-                }
+                Ok(_) => print(
+                    writer,
+                    "Password added successfully",
+                    Some(MessageType::Success),
+                ),
+                Err(err) => print(writer, &format!("Error: {}", err), Some(MessageType::Error)),
             }
         }
         Command::Generate {
@@ -80,11 +81,10 @@ pub fn run_cli<R: BufRead, W: Write>(
             numbers,
             count,
         } => match generate_password(
-            length, symbols, uppercase, lowercase, numbers, count, writer,
+            writer, length, symbols, uppercase, lowercase, numbers, count,
         ) {
             Ok(_) => (),
-            Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red())
-                .unwrap_or_else(|_| println!("{}", format!("Error: {}", err).red())),
+            Err(err) => print(writer, &format!("Error: {}", err), Some(MessageType::Error)),
         },
         Command::List {
             file_name,
@@ -98,14 +98,13 @@ pub fn run_cli<R: BufRead, W: Write>(
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
-                    writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+                    print(writer, &err.to_string(), Some(MessageType::Error));
                     return;
                 }
             };
-            match list_passwords(&mut password_store, show_passwords, writer) {
+            match list_passwords(writer, &mut password_store, show_passwords) {
                 Ok(_) => (),
-                Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red())
-                    .unwrap_or_else(|_| println!("{}", format!("Error: {}", err).red())),
+                Err(err) => print(writer, &format!("Error: {}", err), Some(MessageType::Error)),
             }
         }
         Command::Remove {
@@ -121,14 +120,13 @@ pub fn run_cli<R: BufRead, W: Write>(
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
-                    writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+                    print(writer, &err.to_string(), None);
                     return;
                 }
             };
             match remove_password(writer, &mut password_store, service, username) {
                 Ok(_) => (),
-                Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red())
-                    .unwrap_or_else(|_| println!("{}", format!("Error: {}", err).red())),
+                Err(err) => print(writer, &format!("Error: {}", err), None),
             }
         }
         Command::Show {
@@ -144,14 +142,13 @@ pub fn run_cli<R: BufRead, W: Write>(
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
-                    writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+                    print(writer, &format!("Error: {}", err), None);
                     return;
                 }
             };
-            match show_password(&mut password_store, service, username, writer) {
+            match show_password(writer, &mut password_store, service, username) {
                 Ok(_) => (),
-                Err(err) => writeln!(writer, "{}", format!("Error: {}", err).red())
-                    .unwrap_or_else(|_| println!("{}", format!("Error: {}", err).red())),
+                Err(err) => print(writer, &format!("Error: {}", err), Some(MessageType::Error)),
             }
         }
         Command::UpdateMaster {
@@ -168,19 +165,16 @@ pub fn run_cli<R: BufRead, W: Write>(
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
-                    writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+                    print(writer, &format!("Error: {}", err), None);
                     return;
                 }
             };
             update_master_password(writer, new_master, &mut password_store).unwrap_or_else(|err| {
-                writeln!(
+                print(
                     writer,
-                    "{}: {err}",
-                    "Failed to update master password".red()
-                )
-                .unwrap_or_else(|_| {
-                    println!("{}: {err}", "Failed to update master password".red())
-                });
+                    &format!("Failed to update master password: {err}"),
+                    Some(MessageType::Error),
+                );
             });
         }
         Command::Repl { file_name } => repl(reader, writer, prompt_password, file_name),
@@ -190,8 +184,9 @@ pub fn run_cli<R: BufRead, W: Write>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cli::io::MockPromptPassword;
+    use crate::cli::io::{bold, MockPromptPassword};
     use clap::Parser;
+    use io::colorize;
     use rstest::rstest;
     use std::io::Cursor;
 
@@ -205,7 +200,7 @@ mod tests {
         case(
             vec!["lockbox", "add", "--service", "test_service", "--generate", "--master", "test_master_password"],
             b"",
-            &"Password added successfully".green().to_string(),
+            &colorize("Password added successfully", MessageType::Success).to_string(),
             true
         ),
         case(
@@ -217,7 +212,7 @@ mod tests {
         case(
             vec!["lockbox", "list", "--master", "test_master_password", "--reveal"],
             b"",
-            &format!("Service: {}, Username: {}, Password: {}", "service".blue(), "username".blue(), "password".blue()),
+            &format!("Service: {}, Username: {}, Password: {}", &colorize("service", MessageType::Info).to_string(), &colorize("username", MessageType::Info).to_string(), &colorize("password", MessageType::Info).to_string()),
             true
         ),
         case(
@@ -229,13 +224,13 @@ mod tests {
         case(
             vec!["lockbox", "show", "--service", "service", "--username", "username", "--master", "test_master_password"],
             b"",
-            &format!("Password: {}", "password".blue()),
+            &format!("Password: {}", &colorize("password", MessageType::Info).to_string()),
             true
         ),
         case(
             vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
             b"",
-            &"Master password updated successfully".green().to_string(),
+            &colorize("Master password updated successfully", MessageType::Success).to_string(),
             true
         )
 
@@ -290,36 +285,44 @@ mod tests {
             .returning(|_| Ok("password\n".to_string()));
         run_cli(&mut input, &mut output, &mock_prompt_password, args);
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(&"Welcome to L🦀CKBOX!\n".bold().to_string()));
+        assert!(output_str.contains(&bold("Welcome to L🦀CKBOX!\n").to_string()));
         assert!(output_str.contains(
             &[
-                format!("[{}] {} password", "1".green().bold(), "add".green().bold()),
+                format!(
+                    "[{}] {} password",
+                    colorize(&bold("1").to_string(), MessageType::Success),
+                    colorize(&bold("add").to_string(), MessageType::Success)
+                ),
                 format!(
                     "[{}] {} random password",
-                    "2".green().bold(),
-                    "generate".green().bold()
+                    colorize(&bold("2").to_string(), MessageType::Success),
+                    colorize(&bold("generate").to_string(), MessageType::Success)
                 ),
                 format!(
                     "[{}] {} passwords",
-                    "3".green().bold(),
-                    "list".green().bold()
+                    colorize(&bold("3").to_string(), MessageType::Success),
+                    colorize(&bold("list").to_string(), MessageType::Success)
                 ),
                 format!(
                     "[{}] {} password",
-                    "4".green().bold(),
-                    "remove".green().bold()
+                    colorize(&bold("4").to_string(), MessageType::Success),
+                    colorize(&bold("remove").to_string(), MessageType::Success)
                 ),
                 format!(
                     "[{}] {} password",
-                    "5".green().bold(),
-                    "show".green().bold()
+                    colorize(&bold("5").to_string(), MessageType::Success),
+                    colorize(&bold("show").to_string(), MessageType::Success)
                 ),
                 format!(
                     "[{}] {} password",
-                    "6".green().bold(),
-                    "update master".green().bold()
+                    colorize(&bold("6").to_string(), MessageType::Success),
+                    colorize(&bold("update master").to_string(), MessageType::Success)
                 ),
-                format!("[{}] {}", "7".green().bold(), "exit".green().bold()),
+                format!(
+                    "[{}] {}",
+                    colorize(&bold("7").to_string(), MessageType::Success),
+                    colorize(&bold("exit").to_string(), MessageType::Success)
+                )
             ]
             .join(" ")
         ));
