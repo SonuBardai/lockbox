@@ -83,7 +83,7 @@ impl Passwords {
                     "Service",
                     &pwd.service,
                     None,
-                    message_type.clone(),
+                    message_type,
                     Some(","),
                 );
                 if pwd.username.is_some() {
@@ -92,7 +92,7 @@ impl Passwords {
                         "Username",
                         pwd.username.as_ref().unwrap(),
                         None,
-                        message_type.clone(),
+                        message_type,
                         Some(","),
                     );
                 }
@@ -102,7 +102,7 @@ impl Passwords {
                         "Password",
                         &pwd.password,
                         None,
-                        message_type.clone(),
+                        message_type,
                         None,
                     );
                 } else {

@@ -24,7 +24,7 @@ pub fn repl<R: BufRead, W: Write>(
     prompt_password: &dyn PromptPassword,
     file_name: String,
 ) {
-    print(writer, &bold(&"Welcome to L🦀CKBOX!\n").to_string(), None);
+    print(writer, &bold("Welcome to L🦀CKBOX!\n"), None);
     let file_path =
         get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
     let master = read_hidden_input("master password", prompt_password);
@@ -57,38 +57,38 @@ pub fn run_repl<R: BufRead, W: Write>(
         let message = [
             format!(
                 "[{}] {} password",
-                colorize(&bold("1").to_string(), MessageType::Success),
-                colorize(&bold("add").to_string(), MessageType::Success)
+                colorize(&bold("1"), MessageType::Success),
+                colorize(&bold("add"), MessageType::Success)
             ),
             format!(
                 "[{}] {} random password",
-                colorize(&bold("2").to_string(), MessageType::Success),
-                colorize(&bold("generate").to_string(), MessageType::Success)
+                colorize(&bold("2"), MessageType::Success),
+                colorize(&bold("generate"), MessageType::Success)
             ),
             format!(
                 "[{}] {} passwords",
-                colorize(&bold("3").to_string(), MessageType::Success),
-                colorize(&bold("list").to_string(), MessageType::Success)
+                colorize(&bold("3"), MessageType::Success),
+                colorize(&bold("list"), MessageType::Success)
             ),
             format!(
                 "[{}] {} password",
-                colorize(&bold("4").to_string(), MessageType::Success),
-                colorize(&bold("remove").to_string(), MessageType::Success)
+                colorize(&bold("4"), MessageType::Success),
+                colorize(&bold("remove"), MessageType::Success)
             ),
             format!(
                 "[{}] {} password",
-                colorize(&bold("5").to_string(), MessageType::Success),
-                colorize(&bold("show").to_string(), MessageType::Success)
+                colorize(&bold("5"), MessageType::Success),
+                colorize(&bold("show"), MessageType::Success)
             ),
             format!(
                 "[{}] {} password",
-                colorize(&bold("6").to_string(), MessageType::Success),
-                colorize(&bold("update master").to_string(), MessageType::Success)
+                colorize(&bold("6"), MessageType::Success),
+                colorize(&bold("update master"), MessageType::Success)
             ),
             format!(
                 "[{}] {}",
-                colorize(&bold("7").to_string(), MessageType::Success),
-                colorize(&bold("exit").to_string(), MessageType::Success)
+                colorize(&bold("7"), MessageType::Success),
+                colorize(&bold("exit"), MessageType::Success)
             ),
         ];
 
@@ -120,18 +120,18 @@ fn handle_add_password<R: BufRead, W: Write>(
     let message = [
         format!(
             "[{}] {} random password",
-            colorize(&bold("1").to_string(), MessageType::Success),
-            colorize(&bold("generate").to_string(), MessageType::Success)
+            colorize(&bold("1"), MessageType::Success),
+            colorize(&bold("generate"), MessageType::Success)
         ),
         format!(
             "[{}] {} your own password",
-            colorize(&bold("2").to_string(), MessageType::Success),
-            colorize(&bold("enter").to_string(), MessageType::Success)
+            colorize(&bold("2"), MessageType::Success),
+            colorize(&bold("enter"), MessageType::Success)
         ),
         format!(
             "[{}] {}",
-            colorize(&bold("3").to_string(), MessageType::Success),
-            colorize(&bold("cancel").to_string(), MessageType::Success)
+            colorize(&bold("3"), MessageType::Success),
+            colorize(&bold("cancel"), MessageType::Success)
         ),
     ];
     let message = message.join(" ");
@@ -236,7 +236,7 @@ fn handle_update_master_password<W: Write>(
     });
     print(
         writer,
-        &format!("Master password updated successfully"),
+        "Master password updated successfully",
         Some(MessageType::Success),
     );
 }
