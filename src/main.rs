@@ -1,73 +1,26 @@
 use clap::Parser;
-use lockbox::cli::{
-    args::{Args, Command},
-    commands::{
-        add_password, generate_password, get_random_password, list_passwords, remove_password,
-        show_password,
+use lock_box::{
+    cli::{
+        args::{Args, DEFAULT_PASSWORD_FILENAME},
+        io::RpasswordPromptPassword,
+        run_cli,
     },
+    repl::repl,
 };
 
 fn main() {
-    let args = Args::parse();
-    match args.command {
-        Command::Add {
-            file_name,
-            service,
-            username,
-            password,
-            master,
-            generate,
-            length,
-            symbols,
-            uppercase,
-            lowercase,
-            numbers,
-        } => {
-            let password = if generate {
-                Some(get_random_password(
-                    length, symbols, uppercase, lowercase, numbers,
-                ))
-            } else {
-                password
-            };
-            match add_password(file_name, service, username, master, password) {
-                Ok(_) => (),
-                Err(err) => eprintln!("Error: {}", err),
-            }
-        }
-        Command::Generate {
-            length,
-            symbols,
-            uppercase,
-            lowercase,
-            numbers,
-            count,
-        } => generate_password(length, symbols, uppercase, lowercase, numbers, count),
-        Command::List {
-            file_name,
-            master,
-            show_passwords,
-        } => match list_passwords(file_name, master, show_passwords) {
-            Ok(_) => (),
-            Err(err) => eprintln!("Error: {}", err),
-        },
-        Command::Remove {
-            file_name,
-            service,
-            username,
-            master,
-        } => match remove_password(file_name, service, username, master) {
-            Ok(_) => println!("Password removed successfully"),
-            Err(err) => eprintln!("Error: {}", err),
-        },
-        Command::Show {
-            file_name,
-            service,
-            username,
-            master,
-        } => match show_password(file_name, service, username, master) {
-            Ok(_) => (),
-            Err(err) => eprintln!("Error: {}", err),
-        },
+    let mut input = std::io::stdin().lock();
+    let mut output = std::io::stdout().lock();
+    let prompt_password = &RpasswordPromptPassword;
+    if std::env::args().len() == 1 {
+        repl(
+            &mut input,
+            &mut output,
+            prompt_password,
+            DEFAULT_PASSWORD_FILENAME.to_string(),
+        )
+    } else {
+        let args = Args::parse();
+        run_cli(&mut input, &mut output, prompt_password, args);
     }
 }

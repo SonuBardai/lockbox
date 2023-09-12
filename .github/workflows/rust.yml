@@ -12,6 +12,9 @@ jobs:
         toolchain: [stable, beta, nightly]
     runs-on: ubuntu-latest
     steps:
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev # for clipboard crate
+
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -43,16 +46,26 @@ jobs:
         run: cargo test --all-features
 
   test-coverage:
+    name: Test coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev # for clipboard crate
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust nightly with llvm-tools-preview component
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly
           components: llvm-tools-preview
           override: true
-      - uses: Swatinem/fucov@v1
+
+      - name: Generate test coverage report
+        uses: Swatinem/fucov@v1
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:

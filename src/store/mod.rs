@@ -4,39 +4,39 @@ use crate::{
     pass::Passwords,
 };
 use aes_gcm::aead::Aead;
+use colored::{Color, Colorize};
 use std::fs;
-use std::path::Path;
+use std::io::Write;
+use std::path::PathBuf;
+
+const EMPTY_PASSWORDS: &str = "[]";
 
 pub struct PasswordStore {
-    pub file_name: String,
+    pub file_path: PathBuf,
     master_password: String,
     passwords: Option<Passwords>,
 }
 
 impl PasswordStore {
-    pub fn new(file_name: String, master_password: String) -> anyhow::Result<Self> {
-        let file_path = Path::new(&file_name);
-        if !file_path.exists() {
-            fs::File::create(file_path)?;
-        }
-        if fs::metadata(&file_name)?.len() == 0 {
+    pub fn new(file_path: PathBuf, master_password: String) -> anyhow::Result<Self> {
+        if !file_path.exists() || fs::metadata(&file_path)?.len() == 0 {
             let salt = get_random_salt();
-            let (empty_json, nonce) = encrypt_contents("[]", &master_password, &salt);
+            let (empty_json, nonce) = encrypt_contents(EMPTY_PASSWORDS, &master_password, &salt);
             let mut content = salt.to_vec();
             content.extend(nonce);
             content.extend(empty_json);
-            fs::write(&file_name, content)?;
+            fs::write(&file_path, content)?;
         }
         let store = Self {
-            file_name: file_name.to_string(),
+            file_path,
             master_password,
             passwords: None,
         };
         Ok(store)
     }
 
-    pub fn load_passwords(mut self) -> anyhow::Result<Self> {
-        let encrypted_file = std::fs::read(&self.file_name)?;
+    pub fn load(&mut self) -> anyhow::Result<&mut Self> {
+        let encrypted_file = std::fs::read(&self.file_path)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
         let nonce = &encrypted_file[16..28];
@@ -50,8 +50,8 @@ impl PasswordStore {
         Ok(self)
     }
 
-    pub fn store_passwords(self) -> anyhow::Result<Self> {
-        let encrypted_file = std::fs::read(&self.file_name)?;
+    pub fn dump(&mut self) -> anyhow::Result<&mut Self> {
+        let encrypted_file = std::fs::read(&self.file_path)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
         let nonce = &encrypted_file[16..28];
@@ -62,94 +62,95 @@ impl PasswordStore {
         let mut content = salt.to_vec();
         content.extend(nonce);
         content.extend(encrypted_text);
-        std::fs::write(&self.file_name, content)?;
+        std::fs::write(&self.file_path, content)?;
         Ok(self)
     }
 
-    pub fn add_password(
-        mut self,
+    pub fn push(
+        &mut self,
         service: String,
         username: Option<String>,
         password: String,
-    ) -> anyhow::Result<Self> {
-        let new_password = PasswordEntry::new(service.clone(), username.clone(), password);
+    ) -> anyhow::Result<&mut Self> {
+        let new_password = PasswordEntry::new(service, username, password);
         if let Some(ref mut passwords) = self.passwords {
             passwords.append(new_password);
         } else {
-            panic!("Load passwords before appending");
+            panic!("Load passwords before appending")
         }
         Ok(self)
     }
 
-    pub fn remove_password(mut self, service: String, username: Option<String>) -> Self {
+    pub fn pop<W: Write>(
+        &mut self,
+        writer: &mut W,
+        service: String,
+        username: Option<String>,
+    ) -> &mut Self {
         if let Some(_password) = self
             .passwords
             .as_mut()
             .and_then(|passwords| passwords.remove(service, username))
         {
-            println!("Password deleted");
+            writeln!(writer, "{}", "Password deleted".green())
+                .unwrap_or_else(|_| panic!("Failed to write to stdout"));
         } else {
-            println!("Password not found");
+            writeln!(writer, "{}", "Password not found".bright_yellow())
+                .unwrap_or_else(|_| panic!("Failed to write to stdout"));
         }
         self
     }
 
-    pub fn find_password(
-        &self,
-        service: String,
-        username: Option<String>,
-    ) -> Option<&PasswordEntry> {
+    pub fn find(&self, service: String, username: Option<String>) -> Option<&PasswordEntry> {
         self.passwords
             .as_ref()
             .and_then(|passwords| passwords.find(service, username))
     }
 
-    pub fn print_passwords(&self, show_passwords: bool) {
+    pub fn print(&self, show_passwords: bool, color: Option<Color>, writer: &mut dyn Write) {
         if let Some(passwords) = self.passwords.as_ref() {
-            passwords.print_all(show_passwords);
-        } else {
-            println!("No passwords found!");
+            if let Err(err) = passwords.print_all(show_passwords, color, writer) {
+                writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+            };
         }
+    }
+
+    pub fn update_master(&mut self, new_master_password: String) -> &mut Self {
+        self.master_password = new_master_password;
+        self
     }
 }
 
-// Unit tests
-
 #[cfg(test)]
 mod tests {
-    use super::PasswordEntry;
-    use super::*;
+    use crate::cli::{commands::add_password, io::MockPromptPassword};
+    use passwords::PasswordGenerator;
     use rstest::rstest;
     use tempfile::NamedTempFile;
 
+    use super::*;
     const TEST_MASTER_PASSWORD: &str = "test_master";
 
     #[test]
     fn test_new_password_store() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap();
-        assert_eq!(store.file_name, temp_file_name);
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        assert_eq!(store.file_path, temp_file);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(Path::new(temp_file_name).exists());
+        assert!(temp_file.exists());
     }
 
     #[test]
     fn test_new_password_store_with_nonexistent_file() {
-        let temp_dir = tempfile::tempdir().unwrap();
-        let temp_file_name = temp_dir.path().join("nonexistent_file");
-        let store = PasswordStore::new(
-            temp_file_name.to_str().unwrap().to_string(),
-            TEST_MASTER_PASSWORD.to_string(),
-        )
-        .unwrap();
-        assert_eq!(store.file_name, temp_file_name.to_str().unwrap());
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let store =
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        assert_eq!(store.file_path, temp_file);
         assert_eq!(store.master_password, TEST_MASTER_PASSWORD);
         assert!(store.passwords.is_none());
-        assert!(Path::new(temp_file_name.to_str().unwrap()).exists());
+        assert!(PathBuf::from(temp_file.to_str().unwrap()).exists());
     }
 
     #[rstest]
@@ -178,13 +179,9 @@ mod tests {
         ])
     )]
     fn test_load_after_store_passwords(#[case] test_passwords: Vec<PasswordEntry>) {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap()
-                .load_passwords()
-                .unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store = PasswordStore::new(temp_file, TEST_MASTER_PASSWORD.to_string()).unwrap();
+        store.load().unwrap();
         test_passwords.iter().for_each(|test_password| {
             store
                 .passwords
@@ -268,16 +265,11 @@ mod tests {
         expected_password: Option<PasswordEntry>,
         expect_password_found: bool,
     ) {
-        let temp_file = NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap()
-                .load_passwords()
-                .unwrap();
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store = PasswordStore::new(temp_file, TEST_MASTER_PASSWORD.to_string()).unwrap();
+        store.load().unwrap();
         store.passwords = Some(test_passwords.into());
-        let found_password =
-            store.find_password(service.to_string(), username.map(|u| u.to_string()));
+        let found_password = store.find(service.to_string(), username.map(|u| u.to_string()));
         assert_eq!(found_password.is_some(), expect_password_found);
         if let Some(found_password) = found_password {
             assert_eq!(found_password.service, service);
@@ -294,62 +286,71 @@ mod tests {
         }
     }
 
-    struct PasswordEntryWrapper {
-        password_entry: PasswordEntry,
-    }
+    #[rstest(
+    show_passwords,
+    color,
+    passwords,
+    expected_output,
+    case(
+        true,
+        Some(Color::Blue),
+        vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+        format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "password1".blue(), "service2".blue(), "password2".blue())
+    ),
+    case(
+        false,
+        Some(Color::Blue),
+        vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+        format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "***".blue(), "service2".blue(), "***".blue())
+    )
+    )]
+    fn test_print(
+        show_passwords: bool,
+        color: Option<Color>,
+        passwords: Vec<(&str, Option<&str>, &str)>,
+        expected_output: String,
+    ) {
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store =
+            PasswordStore::new(temp_file, "master_password".to_string()).unwrap();
+        let mut writer = std::io::Cursor::new(Vec::new());
+        let mock_prompt_password = &MockPromptPassword::new();
+        passwords
+            .into_iter()
+            .for_each(|(service, username, password)| {
+                add_password(
+                    &mut writer,
+                    mock_prompt_password,
+                    &mut password_store,
+                    service.to_string(),
+                    username.map(|u| u.to_string()),
+                    Some(password.to_string()),
+                    false,
+                    PasswordGenerator::default(),
+                )
+                .unwrap()
+            });
 
-    impl PasswordEntryWrapper {
-        fn new(password_entry: PasswordEntry) -> Self {
-            PasswordEntryWrapper { password_entry }
-        }
+        let mut output = Vec::new();
+        let mut writer = std::io::Cursor::new(output);
+        password_store.print(show_passwords, color, &mut writer);
 
-        fn password(&self) -> &str {
-            self.password_entry.password()
-        }
+        output = writer.into_inner();
+        let output_str = String::from_utf8(output).unwrap();
+        assert_eq!(output_str, expected_output);
     }
 
     #[test]
-    fn test_add_password() {
-        // Create a new PasswordStore instance with a temporary file
-        let temp_file = tempfile::NamedTempFile::new().unwrap();
-        let temp_file_name = temp_file.path().to_str().unwrap();
-        let mut store =
-            PasswordStore::new(temp_file_name.to_string(), TEST_MASTER_PASSWORD.to_string())
-                .unwrap()
-                .load_passwords() // Load existing passwords
-                .unwrap();
-
-        // Create a sample password to add
-        let password = PasswordEntry::new(
-            "service1".to_string(),
-            Some("user1".to_string()),
-            "password1".to_string(),
-        );
-
-        // Add the password to the store
-        store = store
-            .add_password(
-                password.service.clone(),
-                password.username.clone(),
-                password.password().to_string(), // Use the password method to access the password
-            )
-            .unwrap();
-
-        // Check if the password was added correctly
-        assert!(store.passwords.is_some());
-
-        let stored_passwords = store.passwords.unwrap();
-
-        let found_password = stored_passwords
-            .find(password.service.clone(), password.username.clone())
-            .unwrap();
-        let password_wrapper = PasswordEntryWrapper::new(found_password.clone());
-
-        let found_password = stored_passwords
-            .find(password.service.clone(), password.username.clone())
-            .unwrap();
-        assert_eq!(password.service, found_password.service);
-        assert_eq!(password.username, found_password.username);
-        assert_eq!(password.password(), password_wrapper.password()); // Use the password method to access the password
+    fn test_update_master() {
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut password_store =
+            PasswordStore::new(temp_file, "some_master_password".to_string()).unwrap();
+        password_store.update_master("new_master_password".to_string());
+        assert!(password_store.master_password == "new_master_password");
+        assert!(password_store.load().is_err());
+        if let Err(err) = password_store.load() {
+            err.to_string()
+                .contains("Master password incorrect. Please try again.");
+        };
     }
 }

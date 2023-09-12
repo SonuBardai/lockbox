@@ -1,21 +1,40 @@
 [package]
-name = "lockbox"
-version = "0.1.0"
+authors = ["SonuBardai <sonubardai9@gmail.com>"]
+categories = ["command-line-utilities", "cryptography"]
+name = "lock_box"
+description = "A command-line tool for generating and managing passwords."
+homepage = "https://github.com/SonuBardai/lockbox"
+repository = "https://github.com/SonuBardai/lockbox"
+license = "MIT"
+keywords = [
+    "password",
+    "security",
+    "cli",
+    "password-manager",
+    "password-generator",
+]
+version = "0.1.1"
 edition = "2021"
+readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "lockbox"
+path = "src/main.rs"
 
 [dependencies]
 aes-gcm = "0.10.2"
 anyhow = "1.0.72"
 clap = { version = "4.3.19", features = ["derive"] }
+colored = "2.0.4"
 passwords = "3.1.13"
 ring = "0.16.20"
 rpassword = "7.2.0"
 serde = { version = "1.0.174", features = ["derive"] }
 serde_json = "1.0.103"
 terminal_size = "0.2.6"
+clipboard = "0.5.0"
 
 [dev-dependencies]
+mockall = "0.11.4"
 rstest = "0.18.1"
 tempfile = "3.7.0"
