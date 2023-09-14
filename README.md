@@ -16,7 +16,7 @@ Joined the Rust Lockbox discord community! Here's the [Invite](https://discord.g
 
 ### Install
 
-> **For Linux Users**
+> ### For Linux Users
 > The `clipboard` dependency of this crate requires the following dependencies installed.
 > ```bash
 > sudo apt-get update && sudo apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev
