@@ -168,10 +168,7 @@ pub fn update_master_password<W: Write>(
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        cli::io::{colorize, MockPromptPassword},
-        pass::PasswordEntry,
-    };
+    use crate::{cli::io::MockPromptPassword, pass::PasswordEntry};
 
     use super::*;
     use passwords::PasswordGenerator;

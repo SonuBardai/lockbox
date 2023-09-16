@@ -124,10 +124,7 @@ impl PasswordStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::cli::{
-        commands::add_password,
-        io::{colorize, MockPromptPassword},
-    };
+    use crate::cli::{commands::add_password, io::MockPromptPassword};
     use passwords::PasswordGenerator;
     use rstest::rstest;
     use tempfile::NamedTempFile;
