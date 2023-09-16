@@ -84,10 +84,10 @@ fn get_about(terminal_size: Option<(Width, Height)>) -> String {
                 bold(&indented_about)
             )
         } else {
-            bold(&indented_about).to_string()
+            bold(&indented_about)
         }
     } else {
-        about.to_string()
+        about
     }
 }
 

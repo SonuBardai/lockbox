@@ -1,3 +1,4 @@
+use crossterm::style::{style, Attribute, Color, Stylize};
 use std::io::{stdout, BufRead, Error, Write};
 
 #[cfg(test)]
@@ -41,7 +42,6 @@ pub fn read_terminal_input<R: BufRead, W: Write>(
     reader.read_line(&mut input).unwrap();
     input.trim().to_owned()
 }
-use crossterm::style::{style, Attribute, Color, Stylize};
 
 #[derive(Clone, Copy)]
 pub enum MessageType {
