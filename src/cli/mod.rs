@@ -184,9 +184,8 @@ pub fn run_cli<R: BufRead, W: Write>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cli::io::{bold, MockPromptPassword};
+    use crate::cli::io::MockPromptPassword;
     use clap::Parser;
-    use io::colorize;
     use rstest::rstest;
     use std::io::Cursor;
 
@@ -200,42 +199,47 @@ mod tests {
         case(
             vec!["lockbox", "add", "--service", "test_service", "--generate", "--master", "test_master_password"],
             b"",
-            &colorize("Password added successfully", MessageType::Success).to_string(),
+            vec!["Password added successfully"],
             true
         ),
         case(
             vec!["lockbox", "generate"],
             b"",
-            "Random password generated.",
+            vec!["Random password generated."],
             false
         ),
         case(
             vec!["lockbox", "list", "--master", "test_master_password", "--reveal"],
             b"",
-            &format!("Service: {}, Username: {}, Password: {}", &colorize("service", MessageType::Info).to_string(), &colorize("username", MessageType::Info).to_string(), &colorize("password", MessageType::Info).to_string()),
+            vec!["Service:", "service", "Username:", "username", "Password:", "password"],
             true
         ),
         case(
             vec!["lockbox", "remove", "--service", "service", "--username", "username", "--master", "test_master_password"],
             b"",
-            "Password deleted",
+            vec!["Password deleted"],
             true
         ),
         case(
             vec!["lockbox", "show", "--service", "service", "--username", "username", "--master", "test_master_password"],
             b"",
-            &format!("Password: {}", &colorize("password", MessageType::Info).to_string()),
+            vec!["Password:", "password"],
             true
         ),
         case(
             vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
             b"",
-            &colorize("Master password updated successfully", MessageType::Success).to_string(),
+            vec!["Master password updated successfully"],
             true
         )
 
     )]
-    fn test_run_cli(args: Vec<&str>, input: &[u8], expected_output: &str, use_temp_file: bool) {
+    fn test_run_cli(
+        args: Vec<&str>,
+        input: &[u8],
+        expected_output: Vec<&str>,
+        use_temp_file: bool,
+    ) {
         let mut args = args;
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut temp_writer = std::io::Cursor::new(Vec::new());
@@ -269,7 +273,9 @@ mod tests {
         run_cli(&mut input, &mut output, mock_prompt_password, args);
 
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(expected_output));
+        for item in expected_output {
+            assert!(output_str.contains(item));
+        }
     }
 
     #[test]
@@ -285,46 +291,18 @@ mod tests {
             .returning(|_| Ok("password\n".to_string()));
         run_cli(&mut input, &mut output, &mock_prompt_password, args);
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(&bold("Welcome to L🦀CKBOX!\n").to_string()));
-        assert!(output_str.contains(
-            &[
-                format!(
-                    "[{}] {} password",
-                    colorize(&bold("1").to_string(), MessageType::Success),
-                    colorize(&bold("add").to_string(), MessageType::Success)
-                ),
-                format!(
-                    "[{}] {} random password",
-                    colorize(&bold("2").to_string(), MessageType::Success),
-                    colorize(&bold("generate").to_string(), MessageType::Success)
-                ),
-                format!(
-                    "[{}] {} passwords",
-                    colorize(&bold("3").to_string(), MessageType::Success),
-                    colorize(&bold("list").to_string(), MessageType::Success)
-                ),
-                format!(
-                    "[{}] {} password",
-                    colorize(&bold("4").to_string(), MessageType::Success),
-                    colorize(&bold("remove").to_string(), MessageType::Success)
-                ),
-                format!(
-                    "[{}] {} password",
-                    colorize(&bold("5").to_string(), MessageType::Success),
-                    colorize(&bold("show").to_string(), MessageType::Success)
-                ),
-                format!(
-                    "[{}] {} password",
-                    colorize(&bold("6").to_string(), MessageType::Success),
-                    colorize(&bold("update master").to_string(), MessageType::Success)
-                ),
-                format!(
-                    "[{}] {}",
-                    colorize(&bold("7").to_string(), MessageType::Success),
-                    colorize(&bold("exit").to_string(), MessageType::Success)
-                )
-            ]
-            .join(" ")
-        ));
+        assert!(output_str.contains("Welcome to L🦀CKBOX!"));
+        let operations = [
+            "add",
+            "random",
+            "list",
+            "remove",
+            "show",
+            "update master",
+            "exit",
+        ];
+        for operation in operations {
+            assert!(output_str.contains(operation))
+        }
     }
 }

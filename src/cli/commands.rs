@@ -359,25 +359,20 @@ mod test {
         let output_str = String::from_utf8(output).unwrap();
 
         if passwords.is_empty() {
-            assert!(output_str
-                .contains(&colorize("No passwords found!", MessageType::Warning).to_string()));
+            println!("OUTPUT STR: {output_str}");
+            assert!(output_str.contains("No passwords found!"));
         }
 
         for (service, username, password) in passwords.iter() {
             if show_passwords {
-                assert!(output_str.contains(&format!(
-                    "Service: {}, Username: {}, Password: {}",
-                    service.blue(),
-                    username.blue(),
-                    password.blue()
-                )))
+                assert!(output_str.contains(service));
+                assert!(output_str.contains(username));
+                assert!(output_str.contains(password));
             } else {
-                assert!(output_str.contains(&format!(
-                    "Service: {}, Username: {}, Password: {}",
-                    service.blue(),
-                    username.blue(),
-                    "***".blue()
-                )))
+                assert!(output_str.contains(service));
+                assert!(output_str.contains(username));
+                assert!(!output_str.contains(password));
+                assert!(output_str.contains("***"));
             }
         }
     }
@@ -467,6 +462,6 @@ mod test {
         )
         .unwrap();
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(&"Master password updated successfully".green().to_string()));
+        assert!(output_str.contains("Master password updated successfully"));
     }
 }

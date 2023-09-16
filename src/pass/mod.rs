@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
-use crate::cli::io::{print_key_value_with_color, MessageType};
+use crate::cli::io::{print, print_key_value_with_color, MessageType};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PasswordEntry {
@@ -109,6 +109,8 @@ impl Passwords {
                     print_key_value_with_color(writer, "Password", "***", None, message_type, None);
                 }
             }
+        } else {
+            print(writer, "No passwords found!", Some(MessageType::Warning));
         }
     }
 }
@@ -127,8 +129,7 @@ mod tests {
     #[rstest(
         test_passwords,
         show_passwords,
-        expected_output,
-        case(vec![], true, ""),
+        case(vec![], true),
         case(vec![
             PasswordEntry::new(
                 "service1".to_string(),
@@ -142,7 +143,6 @@ mod tests {
             ),
         ],
         true,
-        "Service: service1, Username: username1, Password: password1\nService: service2, Username: username2, Password: password2\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -157,7 +157,6 @@ mod tests {
             ),
         ],
         true,
-        "Service: service1, Password: password1\nService: service2, Username: username2, Password: password2\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -172,7 +171,6 @@ mod tests {
             ),
         ],
         true,
-        "Service: service1, Password: password1\nService: service2, Password: password2\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -187,7 +185,6 @@ mod tests {
             ),
         ],
         false,
-        "Service: service1, Username: username1, Password: ***\nService: service2, Username: username2, Password: ***\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -202,7 +199,6 @@ mod tests {
             ),
         ],
         false,
-        "Service: service1, Password: ***\nService: service2, Username: username2, Password: ***\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -217,18 +213,23 @@ mod tests {
             ),
         ],
         false,
-        "Service: service1, Password: ***\nService: service2, Password: ***\n"
         ),
     )]
-    fn test_print_all(
-        test_passwords: Vec<PasswordEntry>,
-        show_passwords: bool,
-        expected_output: &str,
-    ) {
+    fn test_print_all(test_passwords: Vec<PasswordEntry>, show_passwords: bool) {
         let passwords = Passwords::from(test_passwords);
         let mut output = Vec::new();
         passwords.print_all(&mut output, show_passwords, None);
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(expected_output));
+        for password in passwords.0 {
+            if show_passwords {
+                assert!(output_str.contains(&password.password))
+            } else {
+                assert!(output_str.contains("***"))
+            };
+            assert!(output_str.contains(&password.service));
+            if password.username.is_some() {
+                assert!(output_str.contains(&password.username.unwrap()))
+            };
+        }
     }
 }

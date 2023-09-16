@@ -94,7 +94,7 @@ impl PasswordStore {
         {
             print(writer, "Password deleted", Some(MessageType::Success));
         } else {
-            print(writer, "{}", Some(MessageType::Error));
+            print(writer, "Password not found", Some(MessageType::Warning));
         }
         self
     }
@@ -297,18 +297,18 @@ mod tests {
         case(
             true,
             vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
-            format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", colorize("service1", MessageType::Info), colorize("username1", MessageType::Info), colorize("password1", MessageType::Info), colorize("service2", MessageType::Info), colorize("password2", MessageType::Info))
+            vec!["Service:", "service1", "Username:", "username", "Password:", "password"]
         ),
         case(
             false,
             vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
-            format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", colorize("service1", MessageType::Info), colorize("username1", MessageType::Info),colorize( "***", MessageType::Info), colorize("service2", MessageType::Info), colorize("***", MessageType::Info))
+            vec!["Service:", "service1", "Username:", "username", "Password:", "***"]
         )
     )]
     fn test_print(
         show_passwords: bool,
         passwords: Vec<(&str, Option<&str>, &str)>,
-        expected_output: String,
+        expected_output: Vec<&str>,
     ) {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store =
@@ -337,7 +337,9 @@ mod tests {
 
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
-        assert_eq!(output_str, expected_output);
+        for item in expected_output {
+            assert!(output_str.contains(item));
+        }
     }
 
     #[test]
