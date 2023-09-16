@@ -1,4 +1,4 @@
-use colored::*;
+use crossterm::style::{style, Attribute, Color, Stylize};
 use std::io::{stdout, BufRead, Error, Write};
 
 #[cfg(test)]
@@ -21,7 +21,7 @@ pub fn read_hidden_input(prompt: &str, prompt_password: &dyn PromptPassword) -> 
     let input = prompt_password
         .prompt_password(format!(
             "Please enter the {prompt}\n{}",
-            colorize(">> ", MessageType::Warning)
+            colorize(">> ", MessageType::DarkYellow)
         ))
         .unwrap_or_else(|_| panic!("Failed to read {}", prompt));
     input.trim().to_string()
@@ -35,8 +35,8 @@ pub fn read_terminal_input<R: BufRead, W: Write>(
     if let Some(prompt) = prompt {
         writeln!(writer, "{}", prompt).unwrap();
     }
-    write!(writer, "{}", colorize(">> ", MessageType::Warning))
-        .unwrap_or_else(|_| print!("{}", colorize(">> ", MessageType::Warning)));
+    write!(writer, "{}", colorize(">> ", MessageType::DarkYellow))
+        .unwrap_or_else(|_| print!("{}", colorize(">> ", MessageType::DarkYellow)));
     stdout().flush().unwrap();
     let mut input = String::new();
     reader.read_line(&mut input).unwrap();
@@ -49,7 +49,8 @@ pub enum MessageType {
     Error,
     Warning,
     Info,
-    BrightRed,
+    DarkRed,
+    DarkYellow,
 }
 
 impl MessageType {
@@ -59,23 +60,24 @@ impl MessageType {
             Self::Error => Color::Red,
             Self::Warning => Color::Yellow,
             Self::Info => Color::Blue,
-            Self::BrightRed => Color::BrightRed,
+            Self::DarkRed => Color::DarkRed,
+            Self::DarkYellow => Color::DarkYellow,
         }
     }
 }
 
-pub fn colorize(message: &str, message_type: MessageType) -> ColoredString {
-    message.color(message_type.get_color())
+pub fn colorize(message: &str, message_type: MessageType) -> String {
+    style(message).with(message_type.get_color()).to_string()
 }
 
-pub fn bold(message: &str) -> ColoredString {
-    message.bold()
+pub fn bold(message: &str) -> String {
+    style(message).attribute(Attribute::Bold).to_string()
 }
 
 pub fn print<W: Write>(writer: &mut W, message: &str, message_type: Option<MessageType>) {
     let message = match message_type {
-        Some(message_type) => message.color(message_type.get_color()),
-        None => message.normal(),
+        Some(message_type) => colorize(message, message_type),
+        None => String::from(message),
     };
     writeln!(writer, "{message}").unwrap_or_else(|_| println!("{message}"));
 }
@@ -89,12 +91,12 @@ pub fn print_key_value_with_color<W: Write>(
     end: Option<&str>,
 ) {
     let colored_key = match key_message_type {
-        Some(message_type) => key.color(message_type.get_color()),
-        None => key.normal(),
+        Some(message_type) => colorize(key, message_type),
+        None => String::from(key),
     };
     let colored_value = match value_message_type {
-        Some(message_type) => value.color(message_type.get_color()),
-        None => value.normal(),
+        Some(message_type) => colorize(value, message_type),
+        None => String::from(value),
     };
     let end = end.unwrap_or("\n");
     write!(writer, "{}: {}{}", colored_key, colored_value, end)
@@ -114,7 +116,7 @@ mod tests {
         assert_eq!(result, "test input");
         assert_eq!(
             String::from_utf8(output).unwrap(),
-            format!("test prompt\n{}", colorize(">> ", MessageType::Warning))
+            format!("test prompt\n{}", colorize(">> ", MessageType::DarkYellow))
         );
     }
 
@@ -126,7 +128,7 @@ mod tests {
             .with(eq(format!(
                 "Please enter the {}\n{}",
                 "password",
-                colorize(">> ", MessageType::Warning)
+                colorize(">> ", MessageType::DarkYellow)
             )))
             .times(1)
             .returning(|_| Ok("secret".to_string()));

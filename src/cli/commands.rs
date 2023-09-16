@@ -29,6 +29,7 @@ pub fn add_password<W: Write>(
     generate: bool,
     password_generator: PasswordGenerator,
 ) -> anyhow::Result<()> {
+    password_store.load()?; // load to check if master password is correct before generating password
     let password = if generate {
         let password = password_generator
             .generate_one()
@@ -48,10 +49,7 @@ pub fn add_password<W: Write>(
     } else {
         password.unwrap_or_else(|| read_hidden_input("password", prompt_password))
     };
-    password_store
-        .load()?
-        .push(service, username, password)?
-        .dump()?;
+    password_store.push(service, username, password)?.dump()?;
     Ok(())
 }
 
