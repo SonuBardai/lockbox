@@ -2,18 +2,17 @@ use crate::{
     cli::{args::Length, io::read_hidden_input},
     store::PasswordStore,
 };
-use anyhow::anyhow;
-use clipboard::{ClipboardContext, ClipboardProvider};
+use copypasta::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
 use std::io::Write;
 
 use super::io::{print, MessageType, PromptPassword};
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
-    let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
-    let mut ctx = ctx_result.map_err(|_| anyhow!("Unable to initialize clipboard"))?;
+    let mut ctx =
+        ClipboardContext::new().map_err(|_| anyhow::anyhow!("Unable to initialize clipboard"))?;
     ctx.set_contents(password)
-        .map_err(|_| anyhow!("Unable to set clipboard contents"))?;
+        .map_err(|_| anyhow::anyhow!("Unable to set clipboard contents"))?;
     Ok(())
 }
 
