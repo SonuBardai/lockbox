@@ -1,6 +1,7 @@
-use colored::*;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
+
+use crate::cli::io::{print, print_key_value_with_color, MessageType};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PasswordEntry {
@@ -17,17 +18,8 @@ impl PasswordEntry {
             password,
         }
     }
-    pub fn print_password(
-        &self,
-        color: Option<Color>,
-        writer: &mut dyn Write,
-    ) -> anyhow::Result<()> {
-        if let Some(color) = color {
-            writeln!(writer, "Password: {}", self.password.color(color))?;
-        } else {
-            writeln!(writer, "Password: {}", self.password)?;
-        }
-        Ok(())
+    pub fn print_password<W: Write>(&self, writer: &mut W, message_type: Option<MessageType>) {
+        print_key_value_with_color(writer, "Password", &self.password, None, message_type, None);
     }
 }
 
@@ -78,77 +70,48 @@ impl Passwords {
         Ok(passwords)
     }
 
-    pub fn print_all(
+    pub fn print_all<W: Write>(
         &self,
+        writer: &mut W,
         show_passwords: bool,
-        color: Option<Color>,
-        writer: &mut dyn Write,
-    ) -> anyhow::Result<()> {
+        message_type: Option<MessageType>,
+    ) {
         if !self.0.is_empty() {
             for pwd in self.0.iter() {
-                if show_passwords {
-                    if let Some(username) = &pwd.username {
-                        if let Some(color) = color {
-                            writeln!(
-                                writer,
-                                "Service: {}, Username: {}, Password: {}",
-                                pwd.service.color(color),
-                                username.color(color),
-                                pwd.password.color(color)
-                            )?;
-                        } else {
-                            writeln!(
-                                writer,
-                                "Service: {}, Username: {}, Password: {}",
-                                pwd.service, username, pwd.password
-                            )?;
-                        }
-                    } else if let Some(color) = color {
-                        writeln!(
-                            writer,
-                            "Service: {}, Password: {}",
-                            pwd.service.color(color),
-                            pwd.password.color(color)
-                        )?;
-                    } else {
-                        writeln!(
-                            writer,
-                            "Service: {}, Password: {}",
-                            pwd.service, pwd.password
-                        )?;
-                    }
-                } else if let Some(username) = &pwd.username {
-                    if let Some(color) = color {
-                        writeln!(
-                            writer,
-                            "Service: {}, Username: {}, Password: {}",
-                            pwd.service.color(color),
-                            username.color(color),
-                            "***".color(color)
-                        )?;
-                    } else {
-                        writeln!(
-                            writer,
-                            "Service: {}, Username: {}, Password: ***",
-                            pwd.service, username
-                        )?;
-                    }
-                } else if let Some(color) = color {
-                    writeln!(
+                print_key_value_with_color(
+                    writer,
+                    "Service",
+                    &pwd.service,
+                    None,
+                    message_type,
+                    Some(","),
+                );
+                if pwd.username.is_some() {
+                    print_key_value_with_color(
                         writer,
-                        "Service: {}, Password: {}",
-                        pwd.service.color(color),
-                        "***".color(color)
-                    )?;
+                        "Username",
+                        pwd.username.as_ref().unwrap(),
+                        None,
+                        message_type,
+                        Some(","),
+                    );
+                }
+                if show_passwords {
+                    print_key_value_with_color(
+                        writer,
+                        "Password",
+                        &pwd.password,
+                        None,
+                        message_type,
+                        None,
+                    );
                 } else {
-                    writeln!(writer, "Service: {}, Password: ***", pwd.service)?;
+                    print_key_value_with_color(writer, "Password", "***", None, message_type, None);
                 }
             }
         } else {
-            writeln!(writer, "{}", "No passwords found!".yellow())
-                .unwrap_or_else(|_| println!("No passwords found!"))
+            print(writer, "No passwords found!", Some(MessageType::Warning));
         }
-        Ok(())
     }
 }
 
@@ -166,8 +129,7 @@ mod tests {
     #[rstest(
         test_passwords,
         show_passwords,
-        expected_output,
-        case(vec![], true, ""),
+        case(vec![], true),
         case(vec![
             PasswordEntry::new(
                 "service1".to_string(),
@@ -181,7 +143,6 @@ mod tests {
             ),
         ],
         true,
-        "Service: service1, Username: username1, Password: password1\nService: service2, Username: username2, Password: password2\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -196,7 +157,6 @@ mod tests {
             ),
         ],
         true,
-        "Service: service1, Password: password1\nService: service2, Username: username2, Password: password2\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -211,7 +171,6 @@ mod tests {
             ),
         ],
         true,
-        "Service: service1, Password: password1\nService: service2, Password: password2\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -226,7 +185,6 @@ mod tests {
             ),
         ],
         false,
-        "Service: service1, Username: username1, Password: ***\nService: service2, Username: username2, Password: ***\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -241,7 +199,6 @@ mod tests {
             ),
         ],
         false,
-        "Service: service1, Password: ***\nService: service2, Username: username2, Password: ***\n"
         ),
         case(vec![
             PasswordEntry::new(
@@ -256,21 +213,23 @@ mod tests {
             ),
         ],
         false,
-        "Service: service1, Password: ***\nService: service2, Password: ***\n"
         ),
     )]
-    fn test_print_all(
-        test_passwords: Vec<PasswordEntry>,
-        show_passwords: bool,
-        expected_output: &str,
-    ) {
+    fn test_print_all(test_passwords: Vec<PasswordEntry>, show_passwords: bool) {
         let passwords = Passwords::from(test_passwords);
         let mut output = Vec::new();
-        passwords
-            .print_all(show_passwords, None, &mut output)
-            .unwrap();
+        passwords.print_all(&mut output, show_passwords, None);
         let output_str = String::from_utf8(output).unwrap();
-        print!("OUTPUT STR: {} END OUTPUT", output_str);
-        assert!(output_str.contains(expected_output));
+        for password in passwords.0 {
+            if show_passwords {
+                assert!(output_str.contains(&password.password))
+            } else {
+                assert!(output_str.contains("***"))
+            };
+            assert!(output_str.contains(&password.service));
+            if password.username.is_some() {
+                assert!(output_str.contains(&password.username.unwrap()))
+            };
+        }
     }
 }

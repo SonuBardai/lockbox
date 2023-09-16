@@ -1,8 +1,11 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
-use colored::Colorize;
 use std::{env, fs::create_dir_all};
 use std::{fmt::Display, path::PathBuf};
 use terminal_size::{terminal_size, Height, Width};
+
+use crate::cli::io::{colorize, MessageType};
+
+use super::io::bold;
 const ASCII_ART_ABOUT: &str = r#"
             ..7J?..   ..^JJ7..
         :~~JPG5PB5PG ~#PPBBGGG5~~:
@@ -39,7 +42,7 @@ pub fn get_password_store_path(file_name: String) -> anyhow::Result<PathBuf> {
 }
 
 fn get_about(terminal_size: Option<(Width, Height)>) -> String {
-    let about = ABOUT.bold();
+    let about = bold(ABOUT);
     if let Some((Width(w), Height(h))) = terminal_size {
         let ascii_art_lines = ASCII_ART_ABOUT.lines().collect::<Vec<&str>>();
         let ascii_art_height = ascii_art_lines.len();
@@ -77,11 +80,11 @@ fn get_about(terminal_size: Option<(Width, Height)>) -> String {
                 .join("\n");
             format!(
                 "{}\n{}",
-                indented_ascii_art.bright_red(),
-                indented_about.bold()
+                colorize(&indented_ascii_art, MessageType::BrightRed),
+                bold(&indented_about)
             )
         } else {
-            indented_about.bold().to_string()
+            bold(&indented_about).to_string()
         }
     } else {
         about.to_string()

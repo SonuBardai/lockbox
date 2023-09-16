@@ -4,11 +4,10 @@ use crate::{
 };
 use anyhow::anyhow;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use colored::*;
 use passwords::PasswordGenerator;
 use std::io::Write;
 
-use super::io::PromptPassword;
+use super::io::{print, MessageType, PromptPassword};
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let ctx_result: Result<ClipboardContext, _> = ClipboardProvider::new();
@@ -20,8 +19,8 @@ pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
 
 // TODO: Refactor this code to pass fewer arguments
 #[allow(clippy::too_many_arguments)]
-pub fn add_password(
-    writer: &mut dyn Write,
+pub fn add_password<W: Write>(
+    writer: &mut W,
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
     service: String,
@@ -33,7 +32,7 @@ pub fn add_password(
     let password = if generate {
         let password = password_generator
             .generate_one()
-            .unwrap_or_else(|_| panic!("{}", "Failed to generate password".red()));
+            .unwrap_or_else(|_| panic!("{}", "Failed to generate password"));
         match copy_to_clipboard(password.clone()) {
             Ok(_) => writeln!(writer, "Random password generated and copied to clipboard")?,
             Err(err) => {
@@ -56,14 +55,14 @@ pub fn add_password(
     Ok(())
 }
 
-pub fn generate_password(
+pub fn generate_password<W: Write>(
+    writer: &mut W,
     length: Length,
     symbols: bool,
     uppercase: bool,
     lowercase: bool,
     numbers: bool,
     count: usize,
-    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     let password_generator = PasswordGenerator::new()
         .length(length.get_val())
@@ -77,63 +76,63 @@ pub fn generate_password(
         match password_generator.generate(count) {
             Ok(passwords) => {
                 for password in passwords {
-                    writeln!(writer, "{}", password.green())?
+                    print(writer, &password, Some(MessageType::Success));
                 }
             }
-            Err(err) => writeln!(
+            Err(err) => print(
                 writer,
-                "{}",
-                format!("Error generating password: {}", err).red()
-            )?,
+                &format!("Error generating password: {err}"),
+                Some(MessageType::Error),
+            ),
         }
     } else {
         match password_generator.generate_one() {
             Ok(password) => {
-                writeln!(writer, "{}", password.green())?;
+                print(writer, &password, Some(MessageType::Success));
                 match copy_to_clipboard(password) {
-                    Ok(_) => writeln!(writer, "(Random password generated. Copied to clipboard)")?,
+                  Ok(_) => print(
+                        writer,
+                        "(Random password generated. Copied to clipboard)",
+                        None,
+                    ),
                     Err(err) => {
-                        writeln!(
-                            writer,
-                            "{}",
-                            format!("(Random password generated. Failed to copy password to clipboard: {})", err).yellow()
-                        )?;
+                        print(writer, &format!("(Random password generated. Failed to copy password to clipboard: {err})"), Some(MessageType::Warning))
                     }
                 }
             }
-            Err(err) => writeln!(
+            Err(err) => print(
                 writer,
-                "{}",
-                format!("Error generating password: {}", err).red()
-            )?,
+                &format!("Error generating password: {}", err),
+                Some(MessageType::Error),
+            ),
         }
     }
     Ok(())
 }
 
-pub fn show_password(
+pub fn show_password<W: Write>(
+    writer: &mut W,
     password_store: &mut PasswordStore,
     service: String,
     username: Option<String>,
-    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     let password = password_store.load()?.find(service, username);
     if let Some(password) = password {
-        password.print_password(Some(Color::Blue), writer)?;
+        password.print_password(writer, Some(MessageType::Info));
     } else {
         writeln!(writer, "Password not found")?;
     }
     Ok(())
 }
 
-pub fn list_passwords(
+pub fn list_passwords<W: Write>(
+    writer: &mut W,
     password_store: &mut PasswordStore,
     show_passwords: bool,
-    writer: &mut dyn Write,
 ) -> anyhow::Result<()> {
     password_store
         .load()?
-        .print(show_passwords, Some(Color::Blue), writer);
+        .print(writer, show_passwords, Some(MessageType::Info));
     Ok(())
 }
 
@@ -159,8 +158,11 @@ pub fn update_master_password<W: Write>(
         .load()?
         .update_master(new_master_password)
         .dump()?;
-    writeln!(writer, "{}", "Master password updated successfully".green())
-        .unwrap_or_else(|_| println!("{}", "Master password updated successfully".green()));
+    print(
+        writer,
+        "Master password updated successfully",
+        Some(MessageType::Success),
+    );
     Ok(())
 }
 
@@ -227,13 +229,13 @@ mod test {
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
         generate_password(
+            &mut writer,
             length,
             symbols,
             uppercase,
             lowercase,
             numbers,
             count,
-            &mut writer,
         )
         .unwrap();
         output = writer.into_inner();
@@ -251,7 +253,7 @@ mod test {
     fn test_generate_password_all_false() {
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
-        generate_password(Length::Eight, false, false, false, false, 1, &mut writer).unwrap();
+        generate_password(&mut writer, Length::Eight, false, false, false, false, 1).unwrap();
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains(
@@ -292,13 +294,13 @@ mod test {
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
         let result = if expect_password_found {
-            show_password(&mut password_store, service, username, &mut writer)
+            show_password(&mut writer, &mut password_store, service, username)
         } else {
             show_password(
+                &mut writer,
                 &mut password_store,
                 "not_found_service".to_string(),
                 Some("not_found_username".to_string()),
-                &mut writer,
             )
         };
         assert!(result.is_ok());
@@ -347,31 +349,27 @@ mod test {
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
-        let result = list_passwords(&mut password_store, show_passwords, &mut writer);
+        let result = list_passwords(&mut writer, &mut password_store, show_passwords);
         assert!(result.is_ok());
 
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
 
         if passwords.is_empty() {
-            assert!(output_str.contains(&"No passwords found!".yellow().to_string()));
+            println!("OUTPUT STR: {output_str}");
+            assert!(output_str.contains("No passwords found!"));
         }
 
         for (service, username, password) in passwords.iter() {
             if show_passwords {
-                assert!(output_str.contains(&format!(
-                    "Service: {}, Username: {}, Password: {}",
-                    service.blue(),
-                    username.blue(),
-                    password.blue()
-                )))
+                assert!(output_str.contains(service));
+                assert!(output_str.contains(username));
+                assert!(output_str.contains(password));
             } else {
-                assert!(output_str.contains(&format!(
-                    "Service: {}, Username: {}, Password: {}",
-                    service.blue(),
-                    username.blue(),
-                    "***".blue()
-                )))
+                assert!(output_str.contains(service));
+                assert!(output_str.contains(username));
+                assert!(!output_str.contains(password));
+                assert!(output_str.contains("***"));
             }
         }
     }
@@ -461,6 +459,6 @@ mod test {
         )
         .unwrap();
         let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains(&"Master password updated successfully".green().to_string()));
+        assert!(output_str.contains("Master password updated successfully"));
     }
 }

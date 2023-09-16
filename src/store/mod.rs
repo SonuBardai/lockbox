@@ -1,10 +1,10 @@
+use crate::cli::io::{print, MessageType};
 use crate::pass::PasswordEntry;
 use crate::{
     crypto::{encrypt_contents, get_cipher, get_random_salt},
     pass::Passwords,
 };
 use aes_gcm::aead::Aead;
-use colored::{Color, Colorize};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -92,11 +92,9 @@ impl PasswordStore {
             .as_mut()
             .and_then(|passwords| passwords.remove(service, username))
         {
-            writeln!(writer, "{}", "Password deleted".green())
-                .unwrap_or_else(|_| panic!("Failed to write to stdout"));
+            print(writer, "Password deleted", Some(MessageType::Success));
         } else {
-            writeln!(writer, "{}", "Password not found".bright_yellow())
-                .unwrap_or_else(|_| panic!("Failed to write to stdout"));
+            print(writer, "Password not found", Some(MessageType::Warning));
         }
         self
     }
@@ -107,11 +105,14 @@ impl PasswordStore {
             .and_then(|passwords| passwords.find(service, username))
     }
 
-    pub fn print(&self, show_passwords: bool, color: Option<Color>, writer: &mut dyn Write) {
+    pub fn print<W: Write>(
+        &self,
+        writer: &mut W,
+        show_passwords: bool,
+        message_type: Option<MessageType>,
+    ) {
         if let Some(passwords) = self.passwords.as_ref() {
-            if let Err(err) = passwords.print_all(show_passwords, color, writer) {
-                writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
-            };
+            passwords.print_all(writer, show_passwords, message_type)
         }
     }
 
@@ -287,28 +288,24 @@ mod tests {
     }
 
     #[rstest(
-    show_passwords,
-    color,
-    passwords,
-    expected_output,
-    case(
-        true,
-        Some(Color::Blue),
-        vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
-        format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "password1".blue(), "service2".blue(), "password2".blue())
-    ),
-    case(
-        false,
-        Some(Color::Blue),
-        vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
-        format!("Service: {}, Username: {}, Password: {}\nService: {}, Password: {}\n", "service1".blue(), "username1".blue(), "***".blue(), "service2".blue(), "***".blue())
-    )
+        show_passwords,
+        passwords,
+        expected_output,
+        case(
+            true,
+            vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+            vec!["Service:", "service1", "Username:", "username", "Password:", "password"]
+        ),
+        case(
+            false,
+            vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+            vec!["Service:", "service1", "Username:", "username", "Password:", "***"]
+        )
     )]
     fn test_print(
         show_passwords: bool,
-        color: Option<Color>,
         passwords: Vec<(&str, Option<&str>, &str)>,
-        expected_output: String,
+        expected_output: Vec<&str>,
     ) {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store =
@@ -333,11 +330,13 @@ mod tests {
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
-        password_store.print(show_passwords, color, &mut writer);
+        password_store.print(&mut writer, show_passwords, Some(MessageType::Info));
 
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
-        assert_eq!(output_str, expected_output);
+        for item in expected_output {
+            assert!(output_str.contains(item));
+        }
     }
 
     #[test]
