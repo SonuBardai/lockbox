@@ -494,8 +494,9 @@ mod tests {
             .returning(|_| Ok("newmasterpassword".to_string()));
         handle_update_master_password(&mut writer, &mock_prompt_password, &mut password_store);
         let output_str = String::from_utf8(writer).unwrap();
-        assert!(output_str.contains(
-            &colorize("Master password updated successfully", MessageType::Success)
-        ));
+        assert!(output_str.contains(&colorize(
+            "Master password updated successfully",
+            MessageType::Success
+        )));
     }
 }
