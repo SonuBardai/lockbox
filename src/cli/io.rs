@@ -1,4 +1,3 @@
-use colored::*;
 use std::io::{stdout, BufRead, Error, Write};
 
 #[cfg(test)]
@@ -42,6 +41,7 @@ pub fn read_terminal_input<R: BufRead, W: Write>(
     reader.read_line(&mut input).unwrap();
     input.trim().to_owned()
 }
+use crossterm::style::{style, Attribute, Color, Stylize};
 
 #[derive(Clone, Copy)]
 pub enum MessageType {
@@ -59,23 +59,23 @@ impl MessageType {
             Self::Error => Color::Red,
             Self::Warning => Color::Yellow,
             Self::Info => Color::Blue,
-            Self::BrightRed => Color::BrightRed,
+            Self::BrightRed => Color::DarkRed,
         }
     }
 }
 
-pub fn colorize(message: &str, message_type: MessageType) -> ColoredString {
-    message.color(message_type.get_color())
+pub fn colorize(message: &str, message_type: MessageType) -> String {
+    style(message).with(message_type.get_color()).to_string()
 }
 
-pub fn bold(message: &str) -> ColoredString {
-    message.bold()
+pub fn bold(message: &str) -> String {
+    style(message).attribute(Attribute::Bold).to_string()
 }
 
 pub fn print<W: Write>(writer: &mut W, message: &str, message_type: Option<MessageType>) {
     let message = match message_type {
-        Some(message_type) => message.color(message_type.get_color()),
-        None => message.normal(),
+        Some(message_type) => colorize(message, message_type),
+        None => String::from(message),
     };
     writeln!(writer, "{message}").unwrap_or_else(|_| println!("{message}"));
 }
@@ -89,12 +89,12 @@ pub fn print_key_value_with_color<W: Write>(
     end: Option<&str>,
 ) {
     let colored_key = match key_message_type {
-        Some(message_type) => key.color(message_type.get_color()),
-        None => key.normal(),
+        Some(message_type) => colorize(key, message_type),
+        None => String::from(key),
     };
     let colored_value = match value_message_type {
-        Some(message_type) => value.color(message_type.get_color()),
-        None => value.normal(),
+        Some(message_type) => colorize(value, message_type),
+        None => String::from(value),
     };
     let end = end.unwrap_or("\n");
     write!(writer, "{}: {}{}", colored_key, colored_value, end)
