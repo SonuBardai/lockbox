@@ -21,7 +21,7 @@ pub fn read_hidden_input(prompt: &str, prompt_password: &dyn PromptPassword) -> 
     let input = prompt_password
         .prompt_password(format!(
             "Please enter the {prompt}\n{}",
-            colorize(">> ", MessageType::Warning)
+            colorize(">> ", MessageType::DarkYellow)
         ))
         .unwrap_or_else(|_| panic!("Failed to read {}", prompt));
     input.trim().to_string()
@@ -35,8 +35,8 @@ pub fn read_terminal_input<R: BufRead, W: Write>(
     if let Some(prompt) = prompt {
         writeln!(writer, "{}", prompt).unwrap();
     }
-    write!(writer, "{}", colorize(">> ", MessageType::Warning))
-        .unwrap_or_else(|_| print!("{}", colorize(">> ", MessageType::Warning)));
+    write!(writer, "{}", colorize(">> ", MessageType::DarkYellow))
+        .unwrap_or_else(|_| print!("{}", colorize(">> ", MessageType::DarkYellow)));
     stdout().flush().unwrap();
     let mut input = String::new();
     reader.read_line(&mut input).unwrap();
@@ -49,7 +49,8 @@ pub enum MessageType {
     Error,
     Warning,
     Info,
-    BrightRed,
+    DarkRed,
+    DarkYellow,
 }
 
 impl MessageType {
@@ -59,7 +60,8 @@ impl MessageType {
             Self::Error => Color::Red,
             Self::Warning => Color::Yellow,
             Self::Info => Color::Blue,
-            Self::BrightRed => Color::DarkRed,
+            Self::DarkRed => Color::DarkRed,
+            Self::DarkYellow => Color::DarkYellow,
         }
     }
 }
@@ -114,7 +116,7 @@ mod tests {
         assert_eq!(result, "test input");
         assert_eq!(
             String::from_utf8(output).unwrap(),
-            format!("test prompt\n{}", colorize(">> ", MessageType::Warning))
+            format!("test prompt\n{}", colorize(">> ", MessageType::DarkYellow))
         );
     }
 
@@ -126,7 +128,7 @@ mod tests {
             .with(eq(format!(
                 "Please enter the {}\n{}",
                 "password",
-                colorize(">> ", MessageType::Warning)
+                colorize(">> ", MessageType::DarkYellow)
             )))
             .times(1)
             .returning(|_| Ok("secret".to_string()));

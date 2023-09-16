@@ -80,7 +80,7 @@ fn get_about(terminal_size: Option<(Width, Height)>) -> String {
                 .join("\n");
             format!(
                 "{}\n{}",
-                colorize(&indented_ascii_art, MessageType::BrightRed),
+                colorize(&indented_ascii_art, MessageType::DarkRed),
                 bold(&indented_about)
             )
         } else {

@@ -256,7 +256,7 @@ mod tests {
             .expect_prompt_password()
             .with(eq(format!(
                 "Please enter the master password\n{}",
-                colorize(">> ", MessageType::Warning)
+                colorize(">> ", MessageType::DarkYellow)
             )))
             .times(1)
             .returning(|_| Ok("secret".to_string()));
