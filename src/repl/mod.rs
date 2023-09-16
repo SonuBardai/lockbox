@@ -234,11 +234,6 @@ fn handle_update_master_password<W: Write>(
             Some(MessageType::Error),
         );
     });
-    print(
-        writer,
-        "Master password updated successfully",
-        Some(MessageType::Success),
-    );
 }
 
 #[cfg(test)]
