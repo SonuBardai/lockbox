@@ -134,6 +134,8 @@ pub fn list_passwords<W: Write>(
     Ok(())
 }
 
+// TODO: Refactor this code to pass fewer arguments
+#[allow(clippy::too_many_arguments)]
 pub fn update_password<W: Write>(
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
