@@ -458,4 +458,11 @@ mod test {
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Master password updated successfully"));
     }
+
+    #[test]
+    fn test_copy_to_clipboard() {
+        let password = String::from("test_password");
+        let result = copy_to_clipboard(password);
+        assert!(result.is_ok());
+    }
 }
