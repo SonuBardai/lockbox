@@ -81,6 +81,25 @@ impl PasswordStore {
         Ok(self)
     }
 
+    pub fn update<W: Write>(
+        &mut self,
+        writer: &mut W,
+        service: String,
+        username: Option<String>,
+        password: String,
+    ) -> &mut Self {
+        if let Some(_password) = self
+            .passwords
+            .as_mut()
+            .and_then(|passwords| passwords.update(service, username, password))
+        {
+            print(writer, "Password updated", Some(MessageType::Success));
+        } else {
+            print(writer, "Password not found", Some(MessageType::Error));
+        }
+        self
+    }
+
     pub fn pop<W: Write>(
         &mut self,
         writer: &mut W,

@@ -134,6 +134,43 @@ pub fn list_passwords<W: Write>(
     Ok(())
 }
 
+pub fn update_password<W: Write>(
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    password_store: &mut PasswordStore,
+    service: String,
+    username: Option<String>,
+    password: Option<String>,
+    generate: bool,
+    password_generator: PasswordGenerator,
+) -> anyhow::Result<()> {
+    password_store.load()?; // load to check if master password is correct before generating password
+    let password = if generate {
+        let password = password_generator
+            .generate_one()
+            .unwrap_or_else(|_| panic!("{}", "Failed to generate password"));
+        match copy_to_clipboard(password.clone()) {
+            Ok(_) => writeln!(writer, "Random password generated and copied to clipboard")?,
+            Err(err) => {
+                writeln!(writer, "Random password generated")?;
+                writeln!(
+                    writer,
+                    "Note: Failed to copy password to clipboard: {}",
+                    err
+                )?;
+            }
+        }
+        password
+    } else {
+        password.unwrap_or_else(|| read_hidden_input("password", prompt_password))
+    };
+    password_store
+        .load()?
+        .update(writer, service, username, password)
+        .dump()?;
+    Ok(())
+}
+
 pub fn remove_password<W: Write>(
     writer: &mut W,
     password_store: &mut PasswordStore,

@@ -53,6 +53,24 @@ impl Passwords {
             .find(|pwd| pwd.service == service && pwd.username == username)
     }
 
+    pub fn update(
+        &mut self,
+        service: String,
+        username: Option<String>,
+        new_password: String,
+    ) -> Option<PasswordEntry> {
+        let password_entry = self
+            .0
+            .iter_mut()
+            .find(|pwd| pwd.service == service && pwd.username == username);
+        if let Some(password_entry) = password_entry {
+            password_entry.password = new_password;
+            Some(password_entry.clone())
+        } else {
+            None
+        }
+    }
+
     pub fn remove(&mut self, service: String, username: Option<String>) -> Option<PasswordEntry> {
         if let Some(index) = self
             .0
@@ -84,7 +102,7 @@ impl Passwords {
                     &pwd.service,
                     None,
                     message_type,
-                    Some(","),
+                    Some(", "),
                 );
                 if pwd.username.is_some() {
                     print_key_value_with_color(
@@ -93,7 +111,7 @@ impl Passwords {
                         pwd.username.as_ref().unwrap(),
                         None,
                         message_type,
-                        Some(","),
+                        Some(", "),
                     );
                 }
                 if show_passwords {

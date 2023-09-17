@@ -6,7 +6,7 @@ use self::{
     args::{get_password_store_path, Args, Command, DEFAULT_PASSWORD_FILENAME},
     commands::{
         add_password, generate_password, list_passwords, remove_password, show_password,
-        update_master_password,
+        update_master_password, update_password,
     },
     io::{print, read_hidden_input, MessageType, PromptPassword},
 };
@@ -125,6 +125,51 @@ pub fn run_cli<R: BufRead, W: Write>(
                 }
             };
             match remove_password(writer, &mut password_store, service, username) {
+                Ok(_) => (),
+                Err(err) => print(writer, &format!("Error: {}", err), None),
+            }
+        }
+        Command::Update {
+            file_name,
+            service,
+            username,
+            password,
+            master,
+            generate,
+            length,
+            symbols,
+            uppercase,
+            lowercase,
+            numbers,
+        } => {
+            let password_generator = PasswordGenerator::new()
+                .length(length.get_val())
+                .lowercase_letters(lowercase)
+                .uppercase_letters(uppercase)
+                .numbers(numbers)
+                .symbols(symbols)
+                .strict(true);
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let mut password_store = match PasswordStore::new(file_path, master) {
+                Ok(password_store) => password_store,
+                Err(err) => {
+                    writeln!(writer, "{}", err).unwrap_or_else(|_| println!("{}", err));
+                    return;
+                }
+            };
+            match update_password(
+                writer,
+                prompt_password,
+                &mut password_store,
+                service,
+                username,
+                password,
+                generate,
+                password_generator,
+            ) {
                 Ok(_) => (),
                 Err(err) => print(writer, &format!("Error: {}", err), None),
             }
