@@ -136,4 +136,50 @@ mod tests {
         let input = read_hidden_input("password", &mock_prompt_password);
         assert_eq!(input, "secret");
     }
+
+    use std::io::Cursor;
+
+    #[test]
+    fn test_colorize() {
+        let test_message = "test_message";
+        let colored_message = colorize(test_message, MessageType::Success);
+        assert!(colored_message.contains(test_message));
+        assert!(colored_message.len() > test_message.len());
+    }
+
+    #[test]
+    fn test_bold() {
+        let test_message = "test_message";
+        let bold_message = bold(test_message);
+        assert!(bold_message.contains(test_message));
+        assert!(bold_message.len() > test_message.len());
+    }
+
+    #[test]
+    fn test_print() {
+        let mut output = Cursor::new(vec![]);
+        let test_message = "test_message";
+        print(&mut output, test_message, Some(MessageType::Success));
+        let output_str = String::from_utf8(output.into_inner()).unwrap();
+        assert!(output_str.contains(test_message));
+        assert!(output_str.len() > test_message.len());
+    }
+
+    #[test]
+    fn test_print_key_value_with_color() {
+        let mut output = Cursor::new(vec![]);
+        let key = "key";
+        let value = "value";
+        print_key_value_with_color(
+            &mut output,
+            key,
+            value,
+            Some(MessageType::Success),
+            Some(MessageType::Error),
+            None,
+        );
+        let output_str = String::from_utf8(output.into_inner()).unwrap();
+        assert!(output_str.contains(key));
+        assert!(output_str.contains(value));
+    }
 }
