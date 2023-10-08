@@ -5,7 +5,6 @@ use crate::{
 use copypasta::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
 use std::io::Write;
-
 use super::io::{print, MessageType, PromptPassword};
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
