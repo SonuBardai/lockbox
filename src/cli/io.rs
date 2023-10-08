@@ -6,7 +6,7 @@ use mockall::automock;
 
 #[cfg_attr(test, automock)]
 pub trait PromptPassword {
-    fn prompt_password(&self, prompt: String) -> Result<String, std::io::Error>;
+    fn prompt_password(&self, prompt: String) -> Result<String, Error>;
 }
 
 pub struct RpasswordPromptPassword;
