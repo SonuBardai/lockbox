@@ -8,6 +8,7 @@ use aes_gcm::aead::Aead;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use crate::crypto::totp_init;
 
 const EMPTY_PASSWORDS: &str = "[]";
 
@@ -26,6 +27,7 @@ impl PasswordStore {
             content.extend(nonce);
             content.extend(empty_json);
             fs::write(&file_path, content)?;
+            totp_init(&master_password);
         }
         let store = Self {
             file_path,
@@ -35,8 +37,12 @@ impl PasswordStore {
         Ok(store)
     }
 
+    pub fn get_mp(&self) -> &String {
+        &self.master_password
+    }
+
     pub fn load(&mut self) -> anyhow::Result<&mut Self> {
-        let encrypted_file = std::fs::read(&self.file_path)?;
+        let encrypted_file = fs::read(&self.file_path)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
         let nonce = &encrypted_file[16..28];
@@ -62,7 +68,7 @@ impl PasswordStore {
         let mut content = salt.to_vec();
         content.extend(nonce);
         content.extend(encrypted_text);
-        std::fs::write(&self.file_path, content)?;
+        fs::write(&self.file_path, content)?;
         Ok(self)
     }
 
@@ -117,6 +123,7 @@ impl PasswordStore {
     }
 
     pub fn update_master(&mut self, new_master_password: String) -> &mut Self {
+        totp_init(&new_master_password);
         self.master_password = new_master_password;
         self
     }
@@ -130,6 +137,7 @@ mod tests {
     use tempfile::NamedTempFile;
 
     use super::*;
+
     const TEST_MASTER_PASSWORD: &str = "test_master";
 
     #[test]
@@ -157,27 +165,27 @@ mod tests {
     #[rstest]
     #[case(Vec::new())]
     #[case(
-        Vec::from([
-            PasswordEntry::new(
-                "test_service_1".to_string(),
-                Some("test_username_1".to_string()),
-                "test_password_1".to_string(),
-            ),
-        ])
+    Vec::from([
+    PasswordEntry::new(
+    "test_service_1".to_string(),
+    Some("test_username_1".to_string()),
+    "test_password_1".to_string(),
+    ),
+    ])
     )]
     #[case(
-        Vec::from([
-            PasswordEntry::new(
-                "test_service_1".to_string(),
-                Some("test_username_1".to_string()),
-                "test_password_1".to_string(),
-            ),
-            PasswordEntry::new(
-                "test_service_2".to_string(),
-                Some("test_username_2".to_string()),
-                "test_password_2".to_string(),
-            ),
-        ])
+    Vec::from([
+    PasswordEntry::new(
+    "test_service_1".to_string(),
+    Some("test_username_1".to_string()),
+    "test_password_1".to_string(),
+    ),
+    PasswordEntry::new(
+    "test_service_2".to_string(),
+    Some("test_username_2".to_string()),
+    "test_password_2".to_string(),
+    ),
+    ])
     )]
     fn test_load_after_store_passwords(#[case] test_passwords: Vec<PasswordEntry>) {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
@@ -198,7 +206,7 @@ mod tests {
                     .unwrap()
                     .find(
                         test_password.service.clone(),
-                        test_password.username.clone()
+                        test_password.username.clone(),
                     )
                     .unwrap(),
                 test_password
@@ -207,57 +215,57 @@ mod tests {
     }
 
     #[rstest(
-        test_passwords,
-        service,
-        username,
-        expected_password,
-        expect_password_found,
-        case(
-            Vec::new(),
-            "test_service",
-            Some("test_username"),
-            None,
-            false
-        ),
-        case(
-            vec![
-                PasswordEntry::new(
-                    "test_service_1".to_string(),
-                    Some("test_username_1".to_string()),
-                    "test_password_1".to_string(),
-                ),
-            ],
-            "test_service_1",
-            Some("test_username_1"),
-            Some(PasswordEntry::new(
-                "test_service_1".to_string(),
-                Some("test_username_1".to_string()),
-                "test_password_1".to_string(),
-            )),
-            true
-        ),
-        case(
-            vec![
-                PasswordEntry::new(
-                    "test_service_1".to_string(),
-                    Some("test_username_1".to_string()),
-                    "test_password_1".to_string(),
-                ),
-                PasswordEntry::new(
-                    "test_service_2".to_string(),
-                    Some("test_username_2".to_string()),
-                    "test_password_2".to_string(),
-                ),
-            ],
-            "test_service_2",
-            Some("test_username_2"),
-            Some(PasswordEntry::new(
-                "test_service_2".to_string(),
-                Some("test_username_2".to_string()),
-                "test_password_2".to_string(),
-            )),
-            true
-        ),
+    test_passwords,
+    service,
+    username,
+    expected_password,
+    expect_password_found,
+    case(
+    Vec::new(),
+    "test_service",
+    Some("test_username"),
+    None,
+    false
+    ),
+    case(
+    vec ! [
+    PasswordEntry::new(
+    "test_service_1".to_string(),
+    Some("test_username_1".to_string()),
+    "test_password_1".to_string(),
+    ),
+    ],
+    "test_service_1",
+    Some("test_username_1"),
+    Some(PasswordEntry::new(
+    "test_service_1".to_string(),
+    Some("test_username_1".to_string()),
+    "test_password_1".to_string(),
+    )),
+    true
+    ),
+    case(
+    vec ! [
+    PasswordEntry::new(
+    "test_service_1".to_string(),
+    Some("test_username_1".to_string()),
+    "test_password_1".to_string(),
+    ),
+    PasswordEntry::new(
+    "test_service_2".to_string(),
+    Some("test_username_2".to_string()),
+    "test_password_2".to_string(),
+    ),
+    ],
+    "test_service_2",
+    Some("test_username_2"),
+    Some(PasswordEntry::new(
+    "test_service_2".to_string(),
+    Some("test_username_2".to_string()),
+    "test_password_2".to_string(),
+    )),
+    true
+    ),
     )]
     fn test_find_password(
         test_passwords: Vec<PasswordEntry>,
@@ -288,19 +296,19 @@ mod tests {
     }
 
     #[rstest(
-        show_passwords,
-        passwords,
-        expected_output,
-        case(
-            true,
-            vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
-            vec!["Service:", "service1", "Username:", "username", "Password:", "password"]
-        ),
-        case(
-            false,
-            vec![("service1", Some("username1"), "password1"), ("service2", None, "password2")],
-            vec!["Service:", "service1", "Username:", "username", "Password:", "***"]
-        )
+    show_passwords,
+    passwords,
+    expected_output,
+    case(
+    true,
+    vec ! [("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+    vec ! ["Service:", "service1", "Username:", "username", "Password:", "password"]
+    ),
+    case(
+    false,
+    vec ! [("service1", Some("username1"), "password1"), ("service2", None, "password2")],
+    vec ! ["Service:", "service1", "Username:", "username", "Password:", "***"]
+    )
     )]
     fn test_print(
         show_passwords: bool,
@@ -325,7 +333,7 @@ mod tests {
                     false,
                     PasswordGenerator::default(),
                 )
-                .unwrap()
+                    .unwrap()
             });
 
         let mut output = Vec::new();

@@ -17,6 +17,7 @@ use std::{
     io::{BufRead, Write},
     path::PathBuf,
 };
+use crate::crypto::verify_totp;
 
 pub fn repl<R: BufRead, W: Write>(
     reader: &mut R,
@@ -25,8 +26,7 @@ pub fn repl<R: BufRead, W: Write>(
     file_name: String,
 ) {
     print(writer, &bold("Welcome to L🦀CKBOX!\n"), None);
-    let file_path =
-        get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+    let file_path = get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
     let master = read_hidden_input("master password", prompt_password);
     let password_store = match PasswordStore::new(file_path, master) {
         Ok(password_store) => password_store,
@@ -104,7 +104,7 @@ pub fn run_repl<R: BufRead, W: Write>(
             "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
             "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
             "6" | "update" | "u" => {
-                handle_update_master_password(writer, prompt_password, &mut password_store)
+                handle_update_master_password(reader, writer, prompt_password, &mut password_store)
             }
             _ => break,
         }
@@ -221,11 +221,21 @@ fn handle_show_password<R: BufRead, W: Write>(
     };
 }
 
-fn handle_update_master_password<W: Write>(
+fn handle_update_master_password<R: BufRead, W: Write>(
+    reader: &mut R,
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
+    let mut c = 0u8;
+    while !verify_totp(reader, writer, password_store) {
+        print(writer,"Incorrect totp", Some(MessageType::Warning));
+        c += 1;
+        if c > 4 {
+            print(writer,"Number of attempts exceeded", Some(MessageType::Error));
+            return;
+        }
+    }
     let new_master_password = read_hidden_input("new master password", prompt_password);
     update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
         print(
@@ -287,30 +297,30 @@ mod tests {
     }
 
     #[rstest(
-        input,
-        expected_output,
-        case(
-            b"add\n1\ntest_service\ntest_username\n7\n" as &[u8],
-            vec![
-                "generate", "enter", "cancel", "Please enter the service name", "Please enter the username (Optional)", "Password added successfully", ">>",
-            ],
-        ),
-        case(
-            b"list\nexit\n" as &[u8],
-            vec!["Service:", "service",  "Username:", "username", "Password:", "password"]
-        ),
-        case(
-            b"generate\nexit\n" as &[u8],
-            vec!["Random password generated."],
-        ),
-        case(
-            b"remove\nservice\nusername\nexit\n" as &[u8],
-            vec!["Password deleted"],
-        ),
-        case(
-            b"show\nservice\nusername\nexit\n" as &[u8],
-            vec!["Password:", "password"],
-        ),
+    input,
+    expected_output,
+    case(
+    b"add\n1\ntest_service\ntest_username\n7\n" as & [u8],
+    vec ! [
+    "generate", "enter", "cancel", "Please enter the service name", "Please enter the username (Optional)", "Password added successfully", ">>",
+    ],
+    ),
+    case(
+    b"list\nexit\n" as & [u8],
+    vec ! ["Service:", "service", "Username:", "username", "Password:", "password"]
+    ),
+    case(
+    b"generate\nexit\n" as & [u8],
+    vec ! ["Random password generated."],
+    ),
+    case(
+    b"remove\nservice\nusername\nexit\n" as & [u8],
+    vec ! ["Password deleted"],
+    ),
+    case(
+    b"show\nservice\nusername\nexit\n" as & [u8],
+    vec ! ["Password:", "password"],
+    ),
     )]
     fn test_run_repl(input: &[u8], expected_output: Vec<&str>) {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
@@ -327,7 +337,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-        .unwrap();
+            .unwrap();
         let mut input = input;
         let mut output = Vec::new();
         let mock_prompt_password = &MockPromptPassword::new();
@@ -376,8 +386,8 @@ mod tests {
         for operation in operations {
             assert!(output_str.contains(operation))
         }
-        assert!(output_str.contains("Please enter the service name",));
-        assert!(output_str.contains("Please enter the username (Optional)",));
+        assert!(output_str.contains("Please enter the service name"));
+        assert!(output_str.contains("Please enter the username (Optional)"));
         assert!(output_str.contains("Password added successfully"));
     }
 
@@ -407,7 +417,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-        .unwrap();
+            .unwrap();
         let mut output = Vec::new();
 
         handle_list_passwords(&mut output, &mut password_store);
@@ -434,7 +444,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-        .unwrap();
+            .unwrap();
 
         let mut input = b"test_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
@@ -465,7 +475,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-        .unwrap();
+            .unwrap();
 
         let mut input = b"test_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
@@ -481,6 +491,7 @@ mod tests {
     }
 
     #[test]
+    // deprecated, need new test
     fn test_handle_update_master_password() {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
@@ -496,7 +507,7 @@ mod tests {
         let output_str = String::from_utf8(writer).unwrap();
         assert!(output_str.contains(&colorize(
             "Master password updated successfully",
-            MessageType::Success
+            MessageType::Success,
         )));
     }
 }
