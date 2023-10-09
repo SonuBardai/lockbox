@@ -1,4 +1,3 @@
-use crate::crypto::verify_totp;
 use crate::{
     cli::{
         args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
@@ -228,21 +227,8 @@ fn handle_update_master_password<R: BufRead, W: Write>(
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
-    let mut c = 0u8;
-    while !verify_totp(reader, writer, password_store) {
-        print(writer, "Incorrect totp", Some(MessageType::Warning));
-        c += 1;
-        if c > 4 {
-            print(
-                writer,
-                "Number of attempts exceeded",
-                Some(MessageType::Error),
-            );
-            return;
-        }
-    }
     let new_master_password = read_hidden_input("new master password", prompt_password);
-    update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
+    update_master_password(reader, writer, new_master_password, password_store).unwrap_or_else(|err| {
         print(
             writer,
             &format!("Failed to update master password: {err}"),

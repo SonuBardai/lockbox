@@ -5,7 +5,8 @@ use crate::{
 };
 use copypasta::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
-use std::io::Write;
+use std::io::{BufRead, Write};
+use crate::crypto::verify_totp;
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let mut ctx =
@@ -86,7 +87,7 @@ pub fn generate_password<W: Write>(
             Ok(password) => {
                 print(writer, &password, Some(MessageType::Success));
                 match copy_to_clipboard(password) {
-                  Ok(_) => print(
+                    Ok(_) => print(
                         writer,
                         "(Random password generated. Copied to clipboard)",
                         None,
@@ -145,11 +146,25 @@ pub fn remove_password<W: Write>(
     Ok(())
 }
 
-pub fn update_master_password<W: Write>(
+pub fn update_master_password<R: BufRead, W: Write>(
+    reader: &mut R,
     writer: &mut W,
     new_master_password: String,
     password_store: &mut PasswordStore,
 ) -> anyhow::Result<()> {
+    let mut c = 0u8;
+    while !verify_totp(reader, writer, password_store) {
+        print(writer, "Incorrect totp", Some(MessageType::Warning));
+        c += 1;
+        if c > 4 {
+            print(
+                writer,
+                "Number of attempts exceeded",
+                Some(MessageType::Error),
+            );
+            return Err(anyhow::Error::msg("TOTP verification failed"));
+        }
+    }
     password_store
         .load()?
         .update_master(new_master_password)
@@ -233,7 +248,7 @@ mod test {
             numbers,
             count,
         )
-        .unwrap();
+            .unwrap();
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
         println!("{}", output_str);
@@ -258,10 +273,10 @@ mod test {
     }
 
     #[rstest(
-        service, username, password, expect_password_found,
-        case("service1".to_string(), Some("username1".to_string()), "password1".to_string(), true),
-        case("service2", None, "password2".to_string(), true),
-        case("service3", None, "password3".to_string(), false)
+    service, username, password, expect_password_found,
+    case("service1".to_string(), Some("username1".to_string()), "password1".to_string(), true),
+    case("service2", None, "password2".to_string(), true),
+    case("service3", None, "password3".to_string(), false)
     )]
     fn test_show_password(
         service: String,
@@ -285,7 +300,7 @@ mod test {
             false,
             PasswordGenerator::default(),
         )
-        .unwrap();
+            .unwrap();
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
@@ -311,15 +326,15 @@ mod test {
     }
 
     #[rstest(
-        show_passwords,
-        passwords,
-        case(false, vec![]),
-        case(false, vec![("service1", "username1", "password1")]),
-        case(true, vec![("service1", "username1", "password1")]),
-        case(false, vec![("service1", "username1", "password1"), ("service2", "username2", "password2")]),
-        case(true, vec![("service1", "username1", "password1"), ("service2", "username2", "password2")]),
-        case(false, vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")]),
-        case(true, vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")])
+    show_passwords,
+    passwords,
+    case(false, vec ! []),
+    case(false, vec ! [("service1", "username1", "password1")]),
+    case(true, vec ! [("service1", "username1", "password1")]),
+    case(false, vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2")]),
+    case(true, vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2")]),
+    case(false, vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")]),
+    case(true, vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")])
     )]
     fn test_list_passwords(show_passwords: bool, passwords: Vec<(&str, &str, &str)>) {
         let master = "master_password".to_string();
@@ -340,7 +355,7 @@ mod test {
                 false,
                 PasswordGenerator::default(),
             )
-            .unwrap();
+                .unwrap();
         }
 
         let mut output = Vec::new();
@@ -375,24 +390,24 @@ mod test {
     password_to_remove,
     expected_passwords,
     case(
-        vec![("service1", "username1", "password1")],
-        ("service1", "username1"),
-        vec![]
+    vec ! [("service1", "username1", "password1")],
+    ("service1", "username1"),
+    vec ! []
     ),
     case(
-        vec![("service1", "username1", "password1"), ("service2", "username2", "password2")],
-        ("service1", "username1"),
-        vec![("service2", "username2", "password2")]
+    vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2")],
+    ("service1", "username1"),
+    vec ! [("service2", "username2", "password2")]
     ),
     case(
-        vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
-        ("service1", "username1"),
-        vec![("service2", "username2", "password2"), ("service3", "username3", "password3")]
+    vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
+    ("service1", "username1"),
+    vec ! [("service2", "username2", "password2"), ("service3", "username3", "password3")]
     ),
     case(
-        vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
-        ("service5", "username5"),
-        vec![("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")]
+    vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")],
+    ("service5", "username5"),
+    vec ! [("service1", "username1", "password1"), ("service2", "username2", "password2"), ("service3", "username3", "password3")]
     )
     )]
     fn test_remove_password(
@@ -418,7 +433,7 @@ mod test {
                 false,
                 PasswordGenerator::default(),
             )
-            .unwrap();
+                .unwrap();
         }
 
         let (service, username) = password_to_remove;
@@ -437,7 +452,7 @@ mod test {
                 Some(&PasswordEntry::new(
                     service.to_string(),
                     Some(username.to_string()),
-                    password.to_string()
+                    password.to_string(),
                 ))
             );
         }
@@ -448,12 +463,24 @@ mod test {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut output = Vec::new();
         let mut password_store = PasswordStore::new(temp_file, "master".to_string()).unwrap();
+        let hash = password_store.get_mp_hash();
+        let totp = totp_rs::TOTP::new(
+            totp_rs::Algorithm::SHA256,
+            6,
+            1,
+            30,
+            totp_rs::Secret::Raw(hash).to_bytes().unwrap(),
+        )
+            .unwrap();
+        let reader = totp.generate_current().unwrap();
+        let mut reader = reader.as_bytes();
         update_master_password(
+            &mut reader,
             &mut output,
             "new_master_password".to_string(),
             &mut password_store,
         )
-        .unwrap();
+            .unwrap();
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Master password updated successfully"));
     }

@@ -62,7 +62,7 @@ impl PasswordStore {
     }
 
     pub fn dump(&mut self) -> anyhow::Result<&mut Self> {
-        let encrypted_file = std::fs::read(&self.file_path)?;
+        let encrypted_file = fs::read(&self.file_path)?;
         let salt = &encrypted_file[..16];
         let cipher = get_cipher(&self.master_password, salt);
         let nonce = &encrypted_file[16..28];
