@@ -127,8 +127,10 @@ impl PasswordStore {
         }
     }
 
-    pub fn update_master(&mut self, new_master_password: String) -> &mut Self {
-        totp_init(&new_master_password);
+    pub fn update_master(&mut self, new_master_password: String, do_update: bool) -> &mut Self {
+        if do_update {
+            totp_init(&new_master_password);
+        }
         self.master_password = new_master_password;
         self
     }

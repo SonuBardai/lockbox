@@ -51,7 +51,7 @@ pub fn run_repl<R: BufRead, W: Write>(
             Some(MessageType::Error),
         );
         let master = read_hidden_input("master password", prompt_password);
-        password_store.update_master(master);
+        password_store.update_master(master,false);
     }
     loop {
         let message = [
