@@ -228,13 +228,15 @@ fn handle_update_master_password<R: BufRead, W: Write>(
     password_store: &mut PasswordStore,
 ) {
     let new_master_password = read_hidden_input("new master password", prompt_password);
-    update_master_password(reader, writer, new_master_password, password_store).unwrap_or_else(|err| {
-        print(
-            writer,
-            &format!("Failed to update master password: {err}"),
-            Some(MessageType::Error),
-        );
-    });
+    update_master_password(reader, writer, new_master_password, password_store).unwrap_or_else(
+        |err| {
+            print(
+                writer,
+                &format!("Failed to update master password: {err}"),
+                Some(MessageType::Error),
+            );
+        },
+    );
 }
 
 #[cfg(test)]

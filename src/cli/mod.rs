@@ -169,20 +169,22 @@ pub fn run_cli<R: BufRead, W: Write>(
                     return;
                 }
             };
-            let mut password_store = match password_store.load() {
+            let password_store = match password_store.load() {
                 Ok(password_store) => password_store,
                 Err(_) => {
-                    print(writer, &format!("Incorrect password."), None);
+                    print(writer, "Incorrect password.", None);
                     return;
                 }
             };
-            update_master_password(reader, writer, new_master, &mut password_store).unwrap_or_else(|err| {
-                print(
-                    writer,
-                    &format!("Failed to update master password: {err}"),
-                    Some(MessageType::Error),
-                );
-            });
+            update_master_password(reader, writer, new_master, password_store).unwrap_or_else(
+                |err| {
+                    print(
+                        writer,
+                        &format!("Failed to update master password: {err}"),
+                        Some(MessageType::Error),
+                    );
+                },
+            );
         }
         Command::Repl { file_name } => repl(reader, writer, prompt_password, file_name),
     }
@@ -264,7 +266,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-            .unwrap();
+        .unwrap();
 
         let temp_file_str = temp_file.to_string_lossy().to_string();
         if use_temp_file {

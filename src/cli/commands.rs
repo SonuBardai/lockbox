@@ -1,4 +1,5 @@
 use super::io::{print, MessageType, PromptPassword};
+use crate::crypto::verify_totp;
 use crate::{
     cli::{args::Length, io::read_hidden_input},
     store::PasswordStore,
@@ -6,7 +7,6 @@ use crate::{
 use copypasta::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
 use std::io::{BufRead, Write};
-use crate::crypto::verify_totp;
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let mut ctx =
@@ -248,7 +248,7 @@ mod test {
             numbers,
             count,
         )
-            .unwrap();
+        .unwrap();
         output = writer.into_inner();
         let output_str = String::from_utf8(output).unwrap();
         println!("{}", output_str);
@@ -300,7 +300,7 @@ mod test {
             false,
             PasswordGenerator::default(),
         )
-            .unwrap();
+        .unwrap();
 
         let mut output = Vec::new();
         let mut writer = std::io::Cursor::new(output);
@@ -355,7 +355,7 @@ mod test {
                 false,
                 PasswordGenerator::default(),
             )
-                .unwrap();
+            .unwrap();
         }
 
         let mut output = Vec::new();
@@ -433,7 +433,7 @@ mod test {
                 false,
                 PasswordGenerator::default(),
             )
-                .unwrap();
+            .unwrap();
         }
 
         let (service, username) = password_to_remove;
@@ -471,7 +471,7 @@ mod test {
             30,
             totp_rs::Secret::Raw(hash).to_bytes().unwrap(),
         )
-            .unwrap();
+        .unwrap();
         let reader = totp.generate_current().unwrap();
         let mut reader = reader.as_bytes();
         update_master_password(
@@ -480,7 +480,7 @@ mod test {
             "new_master_password".to_string(),
             &mut password_store,
         )
-            .unwrap();
+        .unwrap();
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Master password updated successfully"));
     }
