@@ -1,3 +1,4 @@
+use crate::crypto::verify_totp;
 use crate::{
     cli::{
         args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
@@ -17,7 +18,6 @@ use std::{
     io::{BufRead, Write},
     path::PathBuf,
 };
-use crate::crypto::verify_totp;
 
 pub fn repl<R: BufRead, W: Write>(
     reader: &mut R,
@@ -26,7 +26,8 @@ pub fn repl<R: BufRead, W: Write>(
     file_name: String,
 ) {
     print(writer, &bold("Welcome to L🦀CKBOX!\n"), None);
-    let file_path = get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+    let file_path =
+        get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
     let master = read_hidden_input("master password", prompt_password);
     let password_store = match PasswordStore::new(file_path, master) {
         Ok(password_store) => password_store,
@@ -229,10 +230,14 @@ fn handle_update_master_password<R: BufRead, W: Write>(
 ) {
     let mut c = 0u8;
     while !verify_totp(reader, writer, password_store) {
-        print(writer,"Incorrect totp", Some(MessageType::Warning));
+        print(writer, "Incorrect totp", Some(MessageType::Warning));
         c += 1;
         if c > 4 {
-            print(writer,"Number of attempts exceeded", Some(MessageType::Error));
+            print(
+                writer,
+                "Number of attempts exceeded",
+                Some(MessageType::Error),
+            );
             return;
         }
     }
@@ -337,7 +342,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-            .unwrap();
+        .unwrap();
         let mut input = input;
         let mut output = Vec::new();
         let mock_prompt_password = &MockPromptPassword::new();
@@ -417,7 +422,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-            .unwrap();
+        .unwrap();
         let mut output = Vec::new();
 
         handle_list_passwords(&mut output, &mut password_store);
@@ -444,7 +449,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-            .unwrap();
+        .unwrap();
 
         let mut input = b"test_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
@@ -475,7 +480,7 @@ mod tests {
             false,
             PasswordGenerator::default(),
         )
-            .unwrap();
+        .unwrap();
 
         let mut input = b"test_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();

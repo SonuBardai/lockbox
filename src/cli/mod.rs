@@ -17,7 +17,12 @@ use std::{
     path::PathBuf,
 };
 
-pub fn run_cli<R: BufRead, W: Write>(reader: &mut R, writer: &mut W, prompt_password: &dyn PromptPassword, args: Args, ) {
+pub fn run_cli<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    args: Args,
+) {
     match args.command {
         Command::Add {
             file_name,

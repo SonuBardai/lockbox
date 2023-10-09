@@ -1,4 +1,5 @@
 use crate::cli::io::{print, MessageType};
+use crate::crypto::totp_init;
 use crate::pass::PasswordEntry;
 use crate::{
     crypto::{encrypt_contents, get_cipher, get_random_salt},
@@ -8,7 +9,6 @@ use aes_gcm::aead::Aead;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
-use crate::crypto::totp_init;
 
 const EMPTY_PASSWORDS: &str = "[]";
 
@@ -333,7 +333,7 @@ mod tests {
                     false,
                     PasswordGenerator::default(),
                 )
-                    .unwrap()
+                .unwrap()
             });
 
         let mut output = Vec::new();

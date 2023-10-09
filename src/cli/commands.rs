@@ -1,3 +1,4 @@
+use super::io::{print, MessageType, PromptPassword};
 use crate::{
     cli::{args::Length, io::read_hidden_input},
     store::PasswordStore,
@@ -5,7 +6,6 @@ use crate::{
 use copypasta::{ClipboardContext, ClipboardProvider};
 use passwords::PasswordGenerator;
 use std::io::Write;
-use super::io::{print, MessageType, PromptPassword};
 
 pub fn copy_to_clipboard(password: String) -> anyhow::Result<()> {
     let mut ctx =
