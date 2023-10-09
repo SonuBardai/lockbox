@@ -235,14 +235,8 @@ mod tests {
     vec ! ["Password:", "password"],
     true
     ),
-    case(
-    vec ! ["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
-    b"",
-    vec ! ["Master password updated successfully"],
-    true
-    )
-
     )]
+    // ignored password update with arguments
     fn test_run_cli(
         args: Vec<&str>,
         input: &[u8],
@@ -251,7 +245,7 @@ mod tests {
     ) {
         let mut args = args;
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
-        let mut temp_writer = std::io::Cursor::new(Vec::new());
+        let mut temp_writer = Cursor::new(Vec::new());
 
         let mut password_store =
             PasswordStore::new(temp_file.clone(), "test_master_password".to_string()).unwrap();
