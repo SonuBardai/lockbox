@@ -496,7 +496,6 @@ mod tests {
     }
 
     #[test]
-    // deprecated, need new test
     fn test_handle_update_master_password() {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
@@ -508,7 +507,23 @@ mod tests {
         mock_prompt_password
             .expect_prompt_password()
             .returning(|_| Ok("newmasterpassword".to_string()));
-        handle_update_master_password(&mut writer, &mock_prompt_password, &mut password_store);
+        let hash = password_store.get_mp_hash();
+        let totp = totp_rs::TOTP::new(
+            totp_rs::Algorithm::SHA256,
+            6,
+            1,
+            30,
+            totp_rs::Secret::Raw(hash).to_bytes().unwrap(),
+        )
+        .unwrap();
+        let reader = totp.generate_current().unwrap();
+        let mut reader = reader.as_bytes();
+        handle_update_master_password(
+            &mut reader,
+            &mut writer,
+            &mock_prompt_password,
+            &mut password_store,
+        );
         let output_str = String::from_utf8(writer).unwrap();
         assert!(output_str.contains(&colorize(
             "Master password updated successfully",

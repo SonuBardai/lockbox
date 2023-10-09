@@ -358,7 +358,7 @@ mod tests {
         let mut password_store =
             PasswordStore::new(temp_file, "some_master_password".to_string()).unwrap();
         password_store.update_master("new_master_password".to_string());
-        assert!(password_store.master_password == "new_master_password");
+        assert_eq!(password_store.master_password, "new_master_password");
         assert!(password_store.load().is_err());
         if let Err(err) = password_store.load() {
             err.to_string()

@@ -88,15 +88,4 @@ pub fn totp_init(master_password: &String) {
             Some(MessageType::Info),
         );
     };
-
-    /*match copy_to_clipboard(totp_link) {
-        Ok(_) => {
-            print(
-                &mut output,
-                "TOTP link copied to clipboard!",
-                Some(MessageType::Info),
-            );
-        }
-        Err(_) => {}
-    };*/
 }
