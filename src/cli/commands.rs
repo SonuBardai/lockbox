@@ -167,7 +167,7 @@ pub fn update_master_password<R: BufRead, W: Write>(
     }
     password_store
         .load()?
-        .update_master(new_master_password,true)
+        .update_master(new_master_password, true)
         .dump()?;
     print(
         writer,
