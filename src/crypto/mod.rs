@@ -53,17 +53,14 @@ pub fn verify_totp<R: BufRead, W: Write>(
     writer: &mut W,
     password_store: &PasswordStore,
 ) -> bool {
-    let mut hasher = Sha256::new();
-    let bs = password_store.get_mp().as_bytes();
-    hasher.update(bs);
-    let hash = hasher.finalize();
+    let hash = password_store.get_mp_hash();
     let token = read_terminal_input(reader, writer, Some("Enter 2FA/totp code"));
     let totp = TOTP::new(
         Algorithm::SHA256,
         6,
         1,
         30,
-        Secret::Raw(hash.to_vec()).to_bytes().unwrap(),
+        Secret::Raw(hash).to_bytes().unwrap(),
     )
     .unwrap();
     totp.check_current(&token).unwrap()

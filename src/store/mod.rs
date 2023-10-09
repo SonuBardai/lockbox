@@ -6,6 +6,7 @@ use crate::{
     pass::Passwords,
 };
 use aes_gcm::aead::Aead;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -37,8 +38,12 @@ impl PasswordStore {
         Ok(store)
     }
 
-    pub fn get_mp(&self) -> &String {
-        &self.master_password
+    pub fn get_mp_hash(&self) -> Vec<u8> {
+        let mut hasher = Sha256::new();
+        let bs = self.master_password.as_bytes();
+        hasher.update(bs);
+        let hash = hasher.finalize();
+        hash.to_vec()
     }
 
     pub fn load(&mut self) -> anyhow::Result<&mut Self> {
