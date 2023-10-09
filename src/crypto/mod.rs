@@ -51,7 +51,7 @@ pub fn encrypt_contents(contents: &str, master_password: &str, salt: &[u8]) -> (
 pub fn verify_totp<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
-    password_store: &mut PasswordStore,
+    password_store: &PasswordStore,
 ) -> bool {
     let mut hasher = Sha256::new();
     let bs = password_store.get_mp().as_bytes();
@@ -66,7 +66,7 @@ pub fn verify_totp<R: BufRead, W: Write>(
         Secret::Raw(hash.to_vec()).to_bytes().unwrap(),
     )
     .unwrap();
-    totp.check_current(&*token).unwrap()
+    totp.check_current(&token).unwrap()
 }
 
 pub fn totp_init(master_password: &String) {
@@ -74,17 +74,25 @@ pub fn totp_init(master_password: &String) {
     let bs = master_password.as_bytes();
     hasher.update(bs);
     let hash = hasher.finalize();
-    let b32 = base32::encode(Alphabet::RFC4648 { padding: false }, &*hash);
+    let b32 = base32::encode(Alphabet::RFC4648 { padding: false }, &hash);
     let totp_link = format!("otpauth://totp/Lockbox:lockbox?secret={}&issuer=Lockbox&digits=6&period=30&skew=1&algorithm=SHA256", b32);
     let mut output = std::io::stdout().lock();
     print(
         &mut output,
-        &*format!("Your totp url is: {}", totp_link),
+        &format!("Your totp url is: {}", totp_link),
         Some(MessageType::Info),
     );
-    let _ = TermQrCode::from_bytes(totp_link.as_bytes()).print();
+    TermQrCode::from_bytes(totp_link.as_bytes()).print();
     println!();
-    match copy_to_clipboard(totp_link) {
+    if copy_to_clipboard(totp_link).is_ok() {
+        print(
+            &mut output,
+            "TOTP link copied to clipboard!",
+            Some(MessageType::Info),
+        );
+    };
+
+    /*match copy_to_clipboard(totp_link) {
         Ok(_) => {
             print(
                 &mut output,
@@ -93,5 +101,5 @@ pub fn totp_init(master_password: &String) {
             );
         }
         Err(_) => {}
-    };
+    };*/
 }
