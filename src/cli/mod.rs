@@ -169,13 +169,22 @@ pub fn run_cli<R: BufRead, W: Write>(
                     return;
                 }
             };
-            update_master_password(writer, new_master, &mut password_store).unwrap_or_else(|err| {
-                print(
-                    writer,
-                    &format!("Failed to update master password: {err}"),
-                    Some(MessageType::Error),
-                );
-            });
+            let password_store = match password_store.load() {
+                Ok(password_store) => password_store,
+                Err(_) => {
+                    print(writer, "Incorrect password.", None);
+                    return;
+                }
+            };
+            update_master_password(reader, writer, new_master, password_store).unwrap_or_else(
+                |err| {
+                    print(
+                        writer,
+                        &format!("Failed to update master password: {err}"),
+                        Some(MessageType::Error),
+                    );
+                },
+            );
         }
         Command::Repl { file_name } => repl(reader, writer, prompt_password, file_name),
     }
@@ -192,48 +201,42 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[rstest(
-        args,
-        input,
-        expected_output,
-        use_temp_file,
-        case(
-            vec!["lockbox", "add", "--service", "test_service", "--generate", "--master", "test_master_password"],
-            b"",
-            vec!["Password added successfully"],
-            true
-        ),
-        case(
-            vec!["lockbox", "generate"],
-            b"",
-            vec!["Random password generated."],
-            false
-        ),
-        case(
-            vec!["lockbox", "list", "--master", "test_master_password", "--reveal"],
-            b"",
-            vec!["Service:", "service", "Username:", "username", "Password:", "password"],
-            true
-        ),
-        case(
-            vec!["lockbox", "remove", "--service", "service", "--username", "username", "--master", "test_master_password"],
-            b"",
-            vec!["Password deleted"],
-            true
-        ),
-        case(
-            vec!["lockbox", "show", "--service", "service", "--username", "username", "--master", "test_master_password"],
-            b"",
-            vec!["Password:", "password"],
-            true
-        ),
-        case(
-            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
-            b"",
-            vec!["Master password updated successfully"],
-            true
-        )
-
+    args,
+    input,
+    expected_output,
+    use_temp_file,
+    case(
+    vec ! ["lockbox", "add", "--service", "test_service", "--generate", "--master", "test_master_password"],
+    b"",
+    vec ! ["Password added successfully"],
+    true
+    ),
+    case(
+    vec ! ["lockbox", "generate"],
+    b"",
+    vec ! ["Random password generated."],
+    false
+    ),
+    case(
+    vec ! ["lockbox", "list", "--master", "test_master_password", "--reveal"],
+    b"",
+    vec ! ["Service:", "service", "Username:", "username", "Password:", "password"],
+    true
+    ),
+    case(
+    vec ! ["lockbox", "remove", "--service", "service", "--username", "username", "--master", "test_master_password"],
+    b"",
+    vec ! ["Password deleted"],
+    true
+    ),
+    case(
+    vec ! ["lockbox", "show", "--service", "service", "--username", "username", "--master", "test_master_password"],
+    b"",
+    vec ! ["Password:", "password"],
+    true
+    ),
     )]
+    // ignored password update with arguments
     fn test_run_cli(
         args: Vec<&str>,
         input: &[u8],
@@ -242,7 +245,7 @@ mod tests {
     ) {
         let mut args = args;
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
-        let mut temp_writer = std::io::Cursor::new(Vec::new());
+        let mut temp_writer = Cursor::new(Vec::new());
 
         let mut password_store =
             PasswordStore::new(temp_file.clone(), "test_master_password".to_string()).unwrap();

@@ -51,7 +51,7 @@ pub fn run_repl<R: BufRead, W: Write>(
             Some(MessageType::Error),
         );
         let master = read_hidden_input("master password", prompt_password);
-        password_store.update_master(master);
+        password_store.update_master(master, false);
     }
     loop {
         let message = [
@@ -104,7 +104,7 @@ pub fn run_repl<R: BufRead, W: Write>(
             "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
             "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
             "6" | "update" | "u" => {
-                handle_update_master_password(writer, prompt_password, &mut password_store)
+                handle_update_master_password(reader, writer, prompt_password, &mut password_store)
             }
             _ => break,
         }
@@ -221,19 +221,22 @@ fn handle_show_password<R: BufRead, W: Write>(
     };
 }
 
-fn handle_update_master_password<W: Write>(
+fn handle_update_master_password<R: BufRead, W: Write>(
+    reader: &mut R,
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
     let new_master_password = read_hidden_input("new master password", prompt_password);
-    update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
-        print(
-            writer,
-            &format!("Failed to update master password: {err}"),
-            Some(MessageType::Error),
-        );
-    });
+    update_master_password(reader, writer, new_master_password, password_store).unwrap_or_else(
+        |err| {
+            print(
+                writer,
+                &format!("Failed to update master password: {err}"),
+                Some(MessageType::Error),
+            );
+        },
+    );
 }
 
 #[cfg(test)]
@@ -287,30 +290,30 @@ mod tests {
     }
 
     #[rstest(
-        input,
-        expected_output,
-        case(
-            b"add\n1\ntest_service\ntest_username\n7\n" as &[u8],
-            vec![
-                "generate", "enter", "cancel", "Please enter the service name", "Please enter the username (Optional)", "Password added successfully", ">>",
-            ],
-        ),
-        case(
-            b"list\nexit\n" as &[u8],
-            vec!["Service:", "service",  "Username:", "username", "Password:", "password"]
-        ),
-        case(
-            b"generate\nexit\n" as &[u8],
-            vec!["Random password generated."],
-        ),
-        case(
-            b"remove\nservice\nusername\nexit\n" as &[u8],
-            vec!["Password deleted"],
-        ),
-        case(
-            b"show\nservice\nusername\nexit\n" as &[u8],
-            vec!["Password:", "password"],
-        ),
+    input,
+    expected_output,
+    case(
+    b"add\n1\ntest_service\ntest_username\n7\n" as & [u8],
+    vec ! [
+    "generate", "enter", "cancel", "Please enter the service name", "Please enter the username (Optional)", "Password added successfully", ">>",
+    ],
+    ),
+    case(
+    b"list\nexit\n" as & [u8],
+    vec ! ["Service:", "service", "Username:", "username", "Password:", "password"]
+    ),
+    case(
+    b"generate\nexit\n" as & [u8],
+    vec ! ["Random password generated."],
+    ),
+    case(
+    b"remove\nservice\nusername\nexit\n" as & [u8],
+    vec ! ["Password deleted"],
+    ),
+    case(
+    b"show\nservice\nusername\nexit\n" as & [u8],
+    vec ! ["Password:", "password"],
+    ),
     )]
     fn test_run_repl(input: &[u8], expected_output: Vec<&str>) {
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
@@ -376,8 +379,8 @@ mod tests {
         for operation in operations {
             assert!(output_str.contains(operation))
         }
-        assert!(output_str.contains("Please enter the service name",));
-        assert!(output_str.contains("Please enter the username (Optional)",));
+        assert!(output_str.contains("Please enter the service name"));
+        assert!(output_str.contains("Please enter the username (Optional)"));
         assert!(output_str.contains("Password added successfully"));
     }
 
@@ -492,11 +495,27 @@ mod tests {
         mock_prompt_password
             .expect_prompt_password()
             .returning(|_| Ok("newmasterpassword".to_string()));
-        handle_update_master_password(&mut writer, &mock_prompt_password, &mut password_store);
+        let hash = password_store.get_mp_hash();
+        let totp = totp_rs::TOTP::new(
+            totp_rs::Algorithm::SHA256,
+            6,
+            1,
+            30,
+            totp_rs::Secret::Raw(hash).to_bytes().unwrap(),
+        )
+        .unwrap();
+        let reader = totp.generate_current().unwrap();
+        let mut reader = reader.as_bytes();
+        handle_update_master_password(
+            &mut reader,
+            &mut writer,
+            &mock_prompt_password,
+            &mut password_store,
+        );
         let output_str = String::from_utf8(writer).unwrap();
         assert!(output_str.contains(&colorize(
             "Master password updated successfully",
-            MessageType::Success
+            MessageType::Success,
         )));
     }
 }
