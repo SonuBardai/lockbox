@@ -6,7 +6,7 @@ Lockbox is a command-line tool for generating and managing passwords. It uses st
 
 [![codecov](https://codecov.io/gh/SonuBardai/lockbox/branch/main/graph/badge.svg?token=XV39653NA5)](https://codecov.io/gh/SonuBardai/lockbox)
 
-Joined the Rust Lockbox discord community! Here's the [Invite](https://discord.gg/9f5MFhqY)
+Join the Rust Lockbox discord community! Here's the [Invite](https://discord.gg/9f5MFhqY)
 
 ### Project Features
 - **Secure**: Lockbox uses the cutting-edge AES-GCM (Advanced Encryption Standard with Galoise Counter Mode) encryption algorithm to ensure that your passwords are always safe and secure. You can rest easy knowing that your data is protected by the best.
