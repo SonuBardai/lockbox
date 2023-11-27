@@ -81,3 +81,6 @@ Contributions are welcome! If you’d like to contribute, please feel free to op
 
 ### License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+### Changelog
+You can find the changelog for all lockbox versions [here](CHANGELOG.md).

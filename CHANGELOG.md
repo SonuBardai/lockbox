@@ -20,7 +20,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Duplicate print statement in remove password command [Issue](https://github.com/SonuBardai/lockbox/issues/66)
 - Missing linux dependencies added by `clipboard` crate [Issue](https://github.com/SonuBardai/lockbox/issues/73)
-- 
 
 ---
 
