@@ -21,6 +21,10 @@ impl PasswordEntry {
     pub fn print_password<W: Write>(&self, writer: &mut W, message_type: Option<MessageType>) {
         print_key_value_with_color(writer, "Password", &self.password, None, message_type, None);
     }
+
+    pub fn get_password(&self) -> String {
+        self.password.clone()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

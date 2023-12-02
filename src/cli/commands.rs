@@ -116,6 +116,13 @@ pub fn show_password<W: Write>(
     let password = password_store.load()?.find(service, username);
     if let Some(password) = password {
         password.print_password(writer, Some(MessageType::Info));
+        let password = password.get_password();
+        match copy_to_clipboard(password) {
+            Ok(_) => print(writer, "(Password copied to clipboard)", None),
+            Err(err) => {
+                print(writer, &format!("(Random password generated. Failed to copy password to clipboard: {err})"), Some(MessageType::Warning))
+            }
+        }
     } else {
         writeln!(writer, "Password not found")?;
     }
