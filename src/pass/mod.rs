@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
+use crate::cli::commands::copy_to_clipboard;
 use crate::cli::io::{print, print_key_value_with_color, MessageType};
-use crate::cli::commands::{copy_to_clipboard};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct PasswordEntry {

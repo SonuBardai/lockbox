@@ -118,9 +118,13 @@ pub fn show_password<W: Write>(
         password.print_password(writer, Some(MessageType::Info));
         match password.copy_password() {
             Ok(_) => print(writer, "(Password copied to clipboard)", None),
-            Err(err) => {
-                print(writer, &format!("(Random password generated. Failed to copy password to clipboard: {err})"), Some(MessageType::Warning))
-            }
+            Err(err) => print(
+                writer,
+                &format!(
+                    "(Random password generated. Failed to copy password to clipboard: {err})"
+                ),
+                Some(MessageType::Warning),
+            ),
         }
     } else {
         writeln!(writer, "Password not found")?;
