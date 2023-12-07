@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
+use crate::cli::commands::copy_to_clipboard;
 use crate::cli::io::{print, print_key_value_with_color, MessageType};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -20,6 +21,10 @@ impl PasswordEntry {
     }
     pub fn print_password<W: Write>(&self, writer: &mut W, message_type: Option<MessageType>) {
         print_key_value_with_color(writer, "Password", &self.password, None, message_type, None);
+    }
+
+    pub fn copy_password(&self) -> anyhow::Result<()> {
+        copy_to_clipboard(self.password.clone())
     }
 }
 
