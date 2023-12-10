@@ -226,7 +226,20 @@ fn handle_update_master_password<W: Write>(
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
-    let new_master_password = read_hidden_input("new master password", prompt_password);
+    let new_master_password = loop {
+        let first_input = read_hidden_input("new master password", prompt_password);
+        let second_input = read_hidden_input("master password again", prompt_password);
+        if first_input != second_input {
+            print(
+                writer,
+                &format!("Master passwords don't match"),
+                Some(MessageType::Warning),
+            );
+            continue;
+        }
+        break first_input;
+    };
+
     update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
         print(
             writer,
