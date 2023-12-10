@@ -6,8 +6,8 @@ use crate::{
             update_master_password,
         },
         io::{
-            bold, colorize, print, read_hidden_input, read_terminal_input, MessageType,
-            PromptPassword,
+            bold, colorize, print, read_hidden_input, read_hidden_input_with_confirmation,
+            read_terminal_input, MessageType, PromptPassword,
         },
     },
     store::PasswordStore,
@@ -27,7 +27,11 @@ pub fn repl<R: BufRead, W: Write>(
     print(writer, &bold("Welcome to L🦀CKBOX!\n"), None);
     let file_path =
         get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
-    let master = read_hidden_input("master password", prompt_password);
+    let master: String = if !file_path.exists() {
+        read_hidden_input_with_confirmation(writer, "master password", prompt_password)
+    } else {
+        read_hidden_input("master password", prompt_password)
+    };
     let password_store = match PasswordStore::new(file_path, master) {
         Ok(password_store) => password_store,
         Err(err) => {
@@ -226,20 +230,8 @@ fn handle_update_master_password<W: Write>(
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
-    let new_master_password = loop {
-        let first_input = read_hidden_input("new master password", prompt_password);
-        let second_input = read_hidden_input("master password again", prompt_password);
-        if first_input != second_input {
-            print(
-                writer,
-                "Master passwords don't match",
-                Some(MessageType::Warning),
-            );
-            continue;
-        }
-        break first_input;
-    };
-
+    let new_master_password =
+        read_hidden_input_with_confirmation(writer, "master password", prompt_password);
     update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
         print(
             writer,

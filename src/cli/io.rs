@@ -27,6 +27,29 @@ pub fn read_hidden_input(prompt: &str, prompt_password: &dyn PromptPassword) -> 
     input.trim().to_string()
 }
 
+pub fn read_hidden_input_with_confirmation<W: Write>(
+    writer: &mut W,
+    prompt: &str,
+    prompt_password: &dyn PromptPassword,
+) -> String {
+    let mut second_prompt = prompt.to_string();
+    second_prompt.push_str(" again");
+    let second_prompt = second_prompt.as_str();
+    loop {
+        let first_input = read_hidden_input(prompt, prompt_password);
+        let second_input = read_hidden_input(second_prompt, prompt_password);
+        if first_input != second_input {
+            print(
+                writer,
+                "The {prompt}s don't match",
+                Some(MessageType::Warning),
+            );
+            continue;
+        }
+        return second_input;
+    }
+}
+
 pub fn read_terminal_input<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
