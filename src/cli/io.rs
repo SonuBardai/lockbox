@@ -39,11 +39,13 @@ pub fn read_hidden_input_with_confirmation<W: Write>(
         let first_input = read_hidden_input(prompt, prompt_password);
         let second_input = read_hidden_input(second_prompt, prompt_password);
         if first_input != second_input {
-            print(
-                writer,
-                "The {prompt}s don't match",
-                Some(MessageType::Warning),
-            );
+            if !cfg!(test) {
+                print(
+                    writer,
+                    format!("The {prompt}s don't match").as_str(),
+                    Some(MessageType::Warning),
+                );
+            }
             continue;
         }
         return second_input;
@@ -158,6 +160,25 @@ mod tests {
 
         let input = read_hidden_input("password", &mock_prompt_password);
         assert_eq!(input, "secret");
+    }
+
+    #[test]
+    fn test_read_hidden_input_with_confirmation() {
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .times(1)
+            .returning(|_| Ok("Secret".to_string()));
+        mock_prompt_password
+            .expect_prompt_password()
+            .times(3)
+            .returning(|_| Ok("secret".to_string()));
+        let input = read_hidden_input_with_confirmation(
+            &mut std::io::stdout().lock(),
+            "password",
+            &mock_prompt_password,
+        );
+        assert_eq!(input, "secret")
     }
 
     use std::io::Cursor;

@@ -27,7 +27,7 @@ pub fn repl<R: BufRead, W: Write>(
     print(writer, &bold("Welcome to L🦀CKBOX!\n"), None);
     let file_path =
         get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
-    let master: String = if !file_path.exists() {
+    let master = if !file_path.exists() {
         read_hidden_input_with_confirmation(writer, "master password", prompt_password)
     } else {
         read_hidden_input("master password", prompt_password)
@@ -491,9 +491,6 @@ mod tests {
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = Vec::new();
         let mut mock_prompt_password = MockPromptPassword::new();
-        mock_prompt_password
-            .expect_prompt_password()
-            .returning(|_| Ok("secret".to_string()));
         mock_prompt_password
             .expect_prompt_password()
             .returning(|_| Ok("newmasterpassword".to_string()));
