@@ -232,7 +232,7 @@ fn handle_update_master_password<W: Write>(
         if first_input != second_input {
             print(
                 writer,
-                &format!("Master passwords don't match"),
+                "Master passwords don't match",
                 Some(MessageType::Warning),
             );
             continue;
