@@ -352,4 +352,54 @@ mod tests {
                 .contains("Master password incorrect. Please try again.");
         };
     }
+
+    #[test]
+    fn test_push_without_loading() {
+        // Test pushing a password entry without loading passwords first.
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store =
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+
+        // Attempt to push a password entry without loading.
+        let result = store.push(
+            "test_service".to_string(),
+            Some("test_username".to_string()),
+            "test_password".to_string(),
+        );
+
+        assert!(result.is_err());
+        assert!(store.passwords.is_none());
+    }
+
+    #[test]
+    fn test_pop_nonexistent_password() {
+        // Test popping a password that doesn't exist.
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store =
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        store.load().unwrap();
+
+        // Attempt to pop a non-existent password.
+        let mut output = Vec::new();
+        store.pop(&mut output, "nonexistent_service".to_string(), None);
+        let output_str = String::from_utf8(output).unwrap();
+
+        assert!(output_str.contains("Password not found"));
+    }
+
+    #[test]
+    fn test_dump_empty_passwords() {
+        // Test dumping an empty password store.
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut store =
+            PasswordStore::new(temp_file.clone(), TEST_MASTER_PASSWORD.to_string()).unwrap();
+        store.load().unwrap();
+
+        // Dump the empty password store.
+        let result = store.dump();
+
+        assert!(result.is_ok());
+    }
 }
+
+
