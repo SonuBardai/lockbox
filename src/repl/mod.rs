@@ -1,17 +1,14 @@
-use crate::{
-    cli::{
-        args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
-        commands::{
-            add_password, generate_password, list_passwords, remove_password, show_password,
-            update_master_password,
-        },
-        io::{
-            bold, colorize, print, read_hidden_input, read_terminal_input, MessageType,
-            PromptPassword,
-        },
+use crate::{cli::{
+    args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
+    commands::{
+        add_password, generate_password, list_passwords, remove_password, show_password,
+        update_master_password,
     },
-    store::PasswordStore,
-};
+    io::{
+        bold, colorize, print, read_hidden_input, read_terminal_input, MessageType,
+        PromptPassword,
+    },
+}, store::PasswordStore, logger::{Logger, LogType}};
 use passwords::PasswordGenerator;
 use std::{
     io::{BufRead, Write},
@@ -44,6 +41,7 @@ pub fn run_repl<R: BufRead, W: Write>(
     prompt_password: &dyn PromptPassword,
     mut password_store: PasswordStore,
 ) {
+    let logger = Logger::new();
     while let Err(err) = password_store.load() {
         print(
             writer,
@@ -99,7 +97,7 @@ pub fn run_repl<R: BufRead, W: Write>(
             "1" | "add" | "a" => {
                 handle_add_password(reader, writer, prompt_password, &mut password_store)
             }
-            "2" | "generate" | "g" => handle_generate_password(writer),
+            "2" | "generate" | "g" => handle_generate_password(writer, &logger),
             "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store),
             "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
             "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
@@ -172,9 +170,12 @@ fn handle_add_password<R: BufRead, W: Write>(
     };
 }
 
-fn handle_generate_password<W: Write>(writer: &mut W) {
+fn handle_generate_password<W: Write>(writer: &mut W, logger: &Logger) {
     match generate_password(writer, Length::Sixteen, false, true, true, true, 1) {
-        Ok(_) => (),
+        Ok(_) => {
+            logger.write_log(LogType::AddPassword).unwrap();
+            ()
+        },
         Err(err) => print(writer, &format!("Error: {err}"), Some(MessageType::Error)),
     };
 }
@@ -383,9 +384,10 @@ mod tests {
 
     #[test]
     fn test_handle_generate_password() {
+        let logger = Logger::new();
         let mut output = Vec::new();
 
-        handle_generate_password(&mut output);
+        handle_generate_password(&mut output, &logger);
 
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Random password generated."));
