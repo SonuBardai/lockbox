@@ -231,7 +231,7 @@ fn handle_update_master_password<W: Write>(
     password_store: &mut PasswordStore,
 ) {
     let new_master_password =
-        read_hidden_input_with_confirmation(writer, "master password", prompt_password);
+        read_hidden_input_with_confirmation(writer, "new password", prompt_password);
     update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
         print(
             writer,

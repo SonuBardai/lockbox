@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Replace `colored` crate with `crossterm` for colored output. [Issue](https://github.com/SonuBardai/lockbox/issues/71)
 - Replace `clipboard` crate with `copypasta` for copying to clipboard. [Issue](https://github.com/SonuBardai/lockbox/issues/60)
+- Setting up a password store or updating the master password will now prompt the user to re-enter the master password [Issue](https://github.com/SonuBardai/lockbox/issues/56)
 
 ### Fixed
 - Duplicate print statement in remove password command [Issue](https://github.com/SonuBardai/lockbox/issues/66)
