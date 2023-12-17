@@ -48,6 +48,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -95,6 +106,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -117,6 +139,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -139,6 +172,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -158,10 +202,30 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let new_master = new_master
-                .unwrap_or_else(|| read_hidden_input("new master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
+            let new_master =
+                new_master.unwrap_or_else(|| read_hidden_input("new password", prompt_password));
+            let second_input = read_hidden_input("new password again", prompt_password);
+            if new_master != second_input {
+                print(
+                    writer,
+                    "Error: The inserted new passwords don't match",
+                    Some(MessageType::Error),
+                );
+                return;
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
