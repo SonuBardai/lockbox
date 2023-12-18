@@ -405,6 +405,49 @@ mod tests {
         }
     }
 
+    #[rstest(
+        args,
+        input,
+        case(
+            vec!["lockbox", "add", "--service", "test_service", "--generate", "--master", "test_master_password"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "list", "--master", "test_master_password", "--reveal"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "remove", "--service", "service", "--username", "username", "--master", "test_master_password"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "show", "--service", "service", "--username", "username", "--master", "test_master_password"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
+            b"",
+        )
+    )]
+    fn test_cli_new_store_wrong_password(args: Vec<&str>, input: &[u8]) {
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let temp_file_str = temp_file.to_string_lossy().to_string();
+        let mut args = args;
+        args.push("--file-name");
+        args.push(&temp_file_str);
+        let args = Args::parse_from(args);
+        let mut input = Cursor::new(input);
+        let mut output = Vec::new();
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .times(1)
+            .returning(|_| Ok("wrong_test_master_password".to_string()));
+        run_cli(&mut input, &mut output, &mock_prompt_password, args);
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains("Error: The inserted master passwords don't match"));
+    }
+
     #[test]
     fn test_run_cli_repl() {
         let temp_file = NamedTempFile::new().unwrap();
