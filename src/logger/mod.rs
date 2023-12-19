@@ -1,9 +1,9 @@
 use crate::cli::args::get_password_store_path;
 use chrono::prelude::Local;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{json};
 use std::fs::{read_to_string, File};
-use std::io::{Error, ErrorKind, Write};
+use std::io::{ErrorKind, Write};
 use std::path::PathBuf;
 use std::string::ToString;
 
