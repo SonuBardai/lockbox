@@ -1,14 +1,18 @@
-use crate::{cli::{
-    args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
-    commands::{
-        add_password, generate_password, list_passwords, remove_password, show_password,
-        update_master_password,
+use crate::{
+    cli::{
+        args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
+        commands::{
+            add_password, generate_password, list_passwords, remove_password, show_password,
+            update_master_password,
+        },
+        io::{
+            bold, colorize, print, read_hidden_input, read_terminal_input, MessageType,
+            PromptPassword,
+        },
     },
-    io::{
-        bold, colorize, print, read_hidden_input, read_terminal_input, MessageType,
-        PromptPassword,
-    },
-}, store::PasswordStore, logger::{Logger, LogType}};
+    logger::{LogType, Logger},
+    store::PasswordStore,
+};
 use passwords::PasswordGenerator;
 use std::{
     io::{BufRead, Write},
@@ -94,15 +98,23 @@ pub fn run_repl<R: BufRead, W: Write>(
         writeln!(writer, "\nEnter {message}").unwrap();
         let input = read_terminal_input(reader, writer, None);
         match input.as_str() {
-            "1" | "add" | "a" => {
-                handle_add_password(reader, writer, prompt_password, &mut password_store)
-            }
+            "1" | "add" | "a" => handle_add_password(
+                reader,
+                writer,
+                prompt_password,
+                &mut password_store,
+                &logger,
+            ),
             "2" | "generate" | "g" => handle_generate_password(writer, &logger),
-            "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store),
-            "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
-            "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
+            "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store, &logger),
+            "4" | "remove" | "r" => {
+                handle_remove_password(reader, writer, &mut password_store, &logger)
+            }
+            "5" | "show" | "s" => {
+                handle_show_password(reader, writer, &mut password_store, &logger)
+            }
             "6" | "update" | "u" => {
-                handle_update_master_password(writer, prompt_password, &mut password_store)
+                handle_update_master_password(writer, prompt_password, &mut password_store, &logger)
             }
             _ => break,
         }
@@ -114,6 +126,7 @@ fn handle_add_password<R: BufRead, W: Write>(
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
+    logger: &Logger,
 ) {
     let message = [
         format!(
@@ -161,11 +174,14 @@ fn handle_add_password<R: BufRead, W: Write>(
         generate,
         password_generator,
     ) {
-        Ok(_) => print(
-            writer,
-            "Password added successfully",
-            Some(MessageType::Success),
-        ),
+        Ok(_) => {
+            logger.write_log(LogType::AddPassword, None);
+            print(
+                writer,
+                "Password added successfully",
+                Some(MessageType::Success),
+            )
+        }
         Err(err) => print(writer, &format!("Error: {err}"), Some(MessageType::Error)),
     };
 }
@@ -173,14 +189,19 @@ fn handle_add_password<R: BufRead, W: Write>(
 fn handle_generate_password<W: Write>(writer: &mut W, logger: &Logger) {
     match generate_password(writer, Length::Sixteen, false, true, true, true, 1) {
         Ok(_) => {
-            logger.write_log(LogType::AddPassword).unwrap();
+            logger.write_log(LogType::GeneratePassword, None);
             ()
-        },
+        }
         Err(err) => print(writer, &format!("Error: {err}"), Some(MessageType::Error)),
     };
 }
 
-fn handle_list_passwords<W: Write>(writer: &mut W, password_store: &mut PasswordStore) {
+fn handle_list_passwords<W: Write>(
+    writer: &mut W,
+    password_store: &mut PasswordStore,
+    logger: &Logger,
+) {
+    logger.write_log(LogType::List, None);
     list_passwords(writer, password_store, true).unwrap_or_else(|err| {
         print(
             writer,
@@ -194,24 +215,28 @@ fn handle_remove_password<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
     password_store: &mut PasswordStore,
+    logger: &Logger,
 ) {
     let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
     let username =
         read_terminal_input(reader, writer, Some("Please enter the username (Optional)"));
     let username = Option::from(username).filter(|s| !s.is_empty());
-    remove_password(writer, password_store, service, username).unwrap_or_else(|err| {
-        print(
+    let remove_result = remove_password(writer, password_store, service.clone(), username);
+    match remove_result {
+        Ok(_) => logger.write_log(LogType::RemovePassword, Some(service)),
+        Err(err) => print(
             writer,
             &format!("Failed to remove password: {err}"),
             Some(MessageType::Error),
-        )
-    })
+        ),
+    }
 }
 
 fn handle_show_password<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
     password_store: &mut PasswordStore,
+    logger: &Logger,
 ) {
     let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
     let username =
@@ -219,13 +244,16 @@ fn handle_show_password<R: BufRead, W: Write>(
     let username = Option::from(username).filter(|s| !s.is_empty());
     if show_password(writer, password_store, service, username).is_err() {
         print(writer, "Password not found", None);
+        return;
     };
+    logger.write_log(LogType::Show, None)
 }
 
 fn handle_update_master_password<W: Write>(
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
+    logger: &Logger,
 ) {
     let new_master_password = read_hidden_input("new master password", prompt_password);
     update_master_password(writer, new_master_password, password_store).unwrap_or_else(|err| {
@@ -234,7 +262,9 @@ fn handle_update_master_password<W: Write>(
             &format!("Failed to update master password: {err}"),
             Some(MessageType::Error),
         );
+        return;
     });
+    logger.write_log(LogType::UpdateMasterPassword, None);
 }
 
 #[cfg(test)]
@@ -359,6 +389,7 @@ mod tests {
 
     #[test]
     fn test_handle_add_password() {
+        let logger = Logger::new();
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut input = b"1\ntest_service\ntest_username\n" as &[u8];
@@ -370,6 +401,7 @@ mod tests {
             &mut output,
             mock_prompt_password,
             &mut password_store,
+            &logger,
         );
 
         let output_str = String::from_utf8(output).unwrap();
@@ -395,6 +427,7 @@ mod tests {
 
     #[test]
     fn test_handle_list_passwords() {
+        let logger = Logger::new();
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
@@ -412,7 +445,7 @@ mod tests {
         .unwrap();
         let mut output = Vec::new();
 
-        handle_list_passwords(&mut output, &mut password_store);
+        handle_list_passwords(&mut output, &mut password_store, &logger);
 
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("service"));
@@ -422,6 +455,7 @@ mod tests {
 
     #[test]
     fn test_handle_remove_password() {
+        let logger = Logger::new();
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
@@ -440,19 +474,20 @@ mod tests {
 
         let mut input = b"test_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
-        handle_remove_password(&mut input, &mut output, &mut password_store);
+        handle_remove_password(&mut input, &mut output, &mut password_store, &logger);
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Password not found"));
 
         input = b"service\nusername\n" as &[u8];
         output = Vec::new();
-        handle_remove_password(&mut input, &mut output, &mut password_store);
+        handle_remove_password(&mut input, &mut output, &mut password_store, &logger);
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Password deleted"));
     }
 
     #[test]
     fn test_handle_show_password() {
+        let logger = Logger::new();
         let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
         let mut password_store = PasswordStore::new(temp_file, "secret".to_string()).unwrap();
         let mut writer = std::io::Cursor::new(Vec::new());
@@ -471,13 +506,13 @@ mod tests {
 
         let mut input = b"test_service\ntest_username\n" as &[u8];
         let mut output = Vec::new();
-        handle_show_password(&mut input, &mut output, &mut password_store);
+        handle_show_password(&mut input, &mut output, &mut password_store, &logger);
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Password not found"));
 
         input = b"service\nusername\n" as &[u8];
         output = Vec::new();
-        handle_show_password(&mut input, &mut output, &mut password_store);
+        handle_show_password(&mut input, &mut output, &mut password_store, &logger);
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("password"));
     }
