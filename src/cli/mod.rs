@@ -48,6 +48,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -95,6 +106,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -117,6 +139,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -139,6 +172,17 @@ pub fn run_cli<R: BufRead, W: Write>(
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -158,10 +202,30 @@ pub fn run_cli<R: BufRead, W: Write>(
         } => {
             let master =
                 master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
-            let new_master = new_master
-                .unwrap_or_else(|| read_hidden_input("new master password", prompt_password));
             let file_path = get_password_store_path(file_name)
                 .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
+            let new_master =
+                new_master.unwrap_or_else(|| read_hidden_input("new password", prompt_password));
+            let second_input = read_hidden_input("new password again", prompt_password);
+            if new_master != second_input {
+                print(
+                    writer,
+                    "Error: The inserted new passwords don't match",
+                    Some(MessageType::Error),
+                );
+                return;
+            }
             let mut password_store = match PasswordStore::new(file_path, master) {
                 Ok(password_store) => password_store,
                 Err(err) => {
@@ -225,14 +289,7 @@ mod tests {
             b"",
             vec!["Password:", "password"],
             true
-        ),
-        case(
-            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
-            b"",
-            vec!["Master password updated successfully"],
-            true
         )
-
     )]
     fn test_run_cli(
         args: Vec<&str>,
@@ -276,6 +333,119 @@ mod tests {
         for item in expected_output {
             assert!(output_str.contains(item));
         }
+    }
+
+    #[rstest(
+        args,
+        input,
+        prompt_input,
+        expected_output,
+        use_temp_file,
+        case(
+            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
+            b"",
+            "new_master_password",
+            vec!["Master password updated successfully"],
+            true
+        ),
+        case(
+            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
+            b"",
+            "wrong_new_master_password",
+            vec!["Error: The inserted new passwords don't match"],
+            true
+        )
+    )]
+    fn test_run_cli_with_second_prompt(
+        args: Vec<&str>,
+        input: &[u8],
+        prompt_input: &'static str,
+        expected_output: Vec<&str>,
+        use_temp_file: bool,
+    ) {
+        let mut args = args;
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let mut temp_writer = std::io::Cursor::new(Vec::new());
+
+        let mut password_store =
+            PasswordStore::new(temp_file.clone(), "test_master_password".to_string()).unwrap();
+        let mock_prompt_password = &MockPromptPassword::new();
+        add_password(
+            &mut temp_writer,
+            mock_prompt_password,
+            &mut password_store,
+            "service".to_string(),
+            Some("username".to_string()),
+            Some("password".to_string()),
+            false,
+            PasswordGenerator::default(),
+        )
+        .unwrap();
+
+        let temp_file_str = temp_file.to_string_lossy().to_string();
+        if use_temp_file {
+            args.push("--file-name");
+            args.push(&temp_file_str);
+        }
+        let args = Args::parse_from(args);
+
+        let mut input = Cursor::new(input);
+        let mut output = Vec::new();
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .times(1)
+            .returning(|_| Ok(prompt_input.to_string()));
+
+        run_cli(&mut input, &mut output, &mock_prompt_password, args);
+
+        let output_str = String::from_utf8(output).unwrap();
+        for item in expected_output {
+            assert!(output_str.contains(item));
+        }
+    }
+
+    #[rstest(
+        args,
+        input,
+        case(
+            vec!["lockbox", "add", "--service", "test_service", "--generate", "--master", "test_master_password"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "list", "--master", "test_master_password", "--reveal"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "remove", "--service", "service", "--username", "username", "--master", "test_master_password"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "show", "--service", "service", "--username", "username", "--master", "test_master_password"],
+            b"",
+        ),
+        case(
+            vec!["lockbox", "update-master", "--master", "test_master_password", "--new-master", "new_master_password"],
+            b"",
+        )
+    )]
+    fn test_cli_new_store_wrong_password(args: Vec<&str>, input: &[u8]) {
+        let temp_file = NamedTempFile::new().unwrap().path().to_path_buf();
+        let temp_file_str = temp_file.to_string_lossy().to_string();
+        let mut args = args;
+        args.push("--file-name");
+        args.push(&temp_file_str);
+        let args = Args::parse_from(args);
+        let mut input = Cursor::new(input);
+        let mut output = Vec::new();
+        let mut mock_prompt_password = MockPromptPassword::new();
+        mock_prompt_password
+            .expect_prompt_password()
+            .times(1)
+            .returning(|_| Ok("wrong_test_master_password".to_string()));
+        run_cli(&mut input, &mut output, &mock_prompt_password, args);
+        let output_str = String::from_utf8(output).unwrap();
+        assert!(output_str.contains("Error: The inserted master passwords don't match"));
     }
 
     #[test]
