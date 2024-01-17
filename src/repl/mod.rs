@@ -3,7 +3,7 @@ use crate::{
         args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
         commands::{
             add_password, generate_password, list_passwords, remove_password, show_password,
-            update_master_password,
+            update_master_password, update_password,
         },
         io::{
             bold, colorize, print, read_hidden_input, read_hidden_input_with_confirmation,
@@ -77,21 +77,26 @@ pub fn run_repl<R: BufRead, W: Write>(
             format!(
                 "[{}] {} password",
                 colorize(&bold("4"), MessageType::Success),
-                colorize(&bold("remove"), MessageType::Success)
+                colorize(&bold("update"), MessageType::Success)
             ),
             format!(
                 "[{}] {} password",
                 colorize(&bold("5"), MessageType::Success),
-                colorize(&bold("show"), MessageType::Success)
+                colorize(&bold("remove"), MessageType::Success)
             ),
             format!(
                 "[{}] {} password",
                 colorize(&bold("6"), MessageType::Success),
+                colorize(&bold("show"), MessageType::Success)
+            ),
+            format!(
+                "[{}] {} password",
+                colorize(&bold("7"), MessageType::Success),
                 colorize(&bold("update master"), MessageType::Success)
             ),
             format!(
                 "[{}] {}",
-                colorize(&bold("7"), MessageType::Success),
+                colorize(&bold("8"), MessageType::Success),
                 colorize(&bold("exit"), MessageType::Success)
             ),
         ];
@@ -105,9 +110,13 @@ pub fn run_repl<R: BufRead, W: Write>(
             }
             "2" | "generate" | "g" => handle_generate_password(writer),
             "3" | "list" | "l" => handle_list_passwords(writer, &mut password_store),
-            "4" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
-            "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
-            "6" | "update" | "u" => {
+            "4" | "update" | "u" => {
+                handle_update_password(reader, writer, prompt_password, &mut password_store)
+            }
+            "5" | "remove" | "r" => handle_remove_password(reader, writer, &mut password_store),
+            "6" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
+            "7" | "updatemaster" | "um" | "update-master" | "update_master" | "update master"
+            | "master" => {
                 handle_update_master_password(writer, prompt_password, &mut password_store)
             }
             _ => break,
@@ -206,6 +215,67 @@ fn handle_remove_password<R: BufRead, W: Write>(
         print(
             writer,
             &format!("Failed to remove password: {err}"),
+            Some(MessageType::Error),
+        )
+    })
+}
+
+fn handle_update_password<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    password_store: &mut PasswordStore,
+) {
+    let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
+    let username =
+        read_terminal_input(reader, writer, Some("Please enter the username (Optional)"));
+    let username = Option::from(username).filter(|s| !s.is_empty());
+    let message = [
+        format!(
+            "[{}] {} random password",
+            colorize(&bold("1"), MessageType::Success),
+            colorize(&bold("generate"), MessageType::Success)
+        ),
+        format!(
+            "[{}] {} your own password",
+            colorize(&bold("2"), MessageType::Success),
+            colorize(&bold("enter"), MessageType::Success)
+        ),
+        format!(
+            "[{}] {}",
+            colorize(&bold("3"), MessageType::Success),
+            colorize(&bold("cancel"), MessageType::Success)
+        ),
+    ];
+    let message = message.join(" ");
+    writeln!(writer, "{}", message).unwrap();
+    let input = read_terminal_input(reader, writer, None);
+    let generate = match input.as_str() {
+        "1" | "generate" | "g" | "random" | "r" => true,
+        "2" | "enter" | "e" => false,
+        _ => return,
+    };
+    let password_generator = PasswordGenerator::new()
+        .length(Length::Sixteen.get_val())
+        .lowercase_letters(true)
+        .uppercase_letters(true)
+        .numbers(true)
+        .symbols(false)
+        .strict(true);
+    update_password(
+        writer,
+        prompt_password,
+        password_store,
+        service,
+        username,
+        None,
+        generate,
+        password_generator,
+    )
+    .unwrap_or_else(|err| {
+        print(
+            writer,
+            &format!("Failed to update password: {err}"),
             Some(MessageType::Error),
         )
     })
