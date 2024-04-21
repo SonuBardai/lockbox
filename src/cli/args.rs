@@ -278,6 +278,68 @@ pub enum Command {
     },
 
     #[clap(
+        about = "Update a password from the password manager",
+        long_about = "Use this command to update a password entry from your password store. You can specify the service and username associated with the password you want to update. You can also specify the name of the password file and the master password used to encrypt the password store."
+    )]
+    Update {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        file_name: String,
+        #[clap(
+            short,
+            long,
+            help = "The name of the service for which you are removing a password."
+        )]
+        service: String,
+        #[clap(short, long, aliases=&["user"], help="The username associated with the password you want to remove. [Optional]")]
+        username: Option<String>,
+        #[clap(
+            short,
+            long,
+            help = "The new password that will replace the existing password."
+        )]
+        password: Option<String>,
+        #[clap(
+            short,
+            long,
+            help = "The master password used to encrypt the password store."
+        )]
+        master: Option<String>,
+        #[clap(
+            short,
+            long,
+            default_value_t = false,
+            help = "Whether to generate a new password instead of specifying one. [default: false]"
+        )]
+        generate: bool,
+        #[clap(short, long, default_value_t = Length::Sixteen, help="The length of the generated password.")]
+        length: Length,
+        #[clap(
+            long,
+            default_value_t = false,
+            help = "Whether to include symbols in the generated password. [default: false]"
+        )]
+        symbols: bool,
+        #[clap(
+            long,
+            default_value_t = true,
+            help = "Whether to include uppercase letters in the generated password. [default: true]"
+        )]
+        uppercase: bool,
+        #[clap(
+            long,
+            default_value_t = true,
+            help = "Whether to include lowercase letters in the generated password. [default: true]"
+        )]
+        lowercase: bool,
+        #[clap(
+            long,
+            default_value_t = true,
+            help = "Whether to include numbers in the generated password. [default: true]"
+        )]
+        numbers: bool,
+    },
+
+    #[clap(
         about = "Show a specific password in the password manager",
         long_about = "Use this command to show a specific password stored in your password manager. You can specify the service and username associated with the password you want to show. You can also specify the name of the password file and the master password used to decrypt the password store."
     )]
