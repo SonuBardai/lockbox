@@ -5,8 +5,8 @@ pub mod io;
 use self::{
     args::{get_password_store_path, Args, Command, DEFAULT_PASSWORD_FILENAME},
     commands::{
-        add_password, generate_password, list_passwords, remove_password, show_password,
-        update_master_password,
+        add_password, copy_password, generate_password, list_passwords, remove_password,
+        show_password, update_master_password,
     },
     io::{print, read_hidden_input, MessageType, PromptPassword},
 };
@@ -191,6 +191,39 @@ pub fn run_cli<R: BufRead, W: Write>(
                 }
             };
             match show_password(writer, &mut password_store, service, username) {
+                Ok(_) => (),
+                Err(err) => print(writer, &format!("Error: {}", err), Some(MessageType::Error)),
+            }
+        }
+        Command::Copy {
+            file_name,
+            service,
+            username,
+            master,
+        } => {
+            let master =
+                master.unwrap_or_else(|| read_hidden_input("master password", prompt_password));
+            let file_path = get_password_store_path(file_name)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if !file_path.exists() {
+                let second_input = read_hidden_input("master password again", prompt_password);
+                if master != second_input {
+                    print(
+                        writer,
+                        "Error: The inserted master passwords don't match",
+                        Some(MessageType::Error),
+                    );
+                    return;
+                }
+            }
+            let mut password_store = match PasswordStore::new(file_path, master) {
+                Ok(password_store) => password_store,
+                Err(err) => {
+                    print(writer, &format!("Error: {}", err), None);
+                    return;
+                }
+            };
+            match copy_password(writer, &mut password_store, service, username) {
                 Ok(_) => (),
                 Err(err) => print(writer, &format!("Error: {}", err), Some(MessageType::Error)),
             }

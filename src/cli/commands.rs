@@ -173,6 +173,30 @@ pub fn update_master_password<W: Write>(
     Ok(())
 }
 
+pub fn copy_password<W: Write>(
+    writer: &mut W,
+    password_store: &mut PasswordStore,
+    service: String,
+    username: Option<String>,
+) -> anyhow::Result<()> {
+    let password = password_store.load()?.find(service, username);
+    if let Some(password) = password {
+        match password.copy_password() {
+            Ok(_) => print(writer, "(Password copied to clipboard)", None),
+            Err(err) => print(
+                writer,
+                &format!(
+                    "(Random password generated. Failed to copy password to clipboard: {err})"
+                ),
+                Some(MessageType::Warning),
+            ),
+        }
+    } else {
+        writeln!(writer, "Password not found")?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use crate::{cli::io::MockPromptPassword, pass::PasswordEntry};

@@ -2,8 +2,8 @@ use crate::{
     cli::{
         args::{get_password_store_path, Length, DEFAULT_PASSWORD_FILENAME},
         commands::{
-            add_password, generate_password, list_passwords, remove_password, show_password,
-            update_master_password,
+            add_password, copy_password, generate_password, list_passwords, remove_password,
+            show_password, update_master_password,
         },
         io::{
             bold, colorize, print, read_hidden_input, read_hidden_input_with_confirmation,
@@ -90,8 +90,13 @@ pub fn run_repl<R: BufRead, W: Write>(
                 colorize(&bold("update master"), MessageType::Success)
             ),
             format!(
-                "[{}] {}",
+                "[{}] {} password",
                 colorize(&bold("7"), MessageType::Success),
+                colorize(&bold("copy"), MessageType::Success)
+            ),
+            format!(
+                "[{}] {}",
+                colorize(&bold("8"), MessageType::Success),
                 colorize(&bold("exit"), MessageType::Success)
             ),
         ];
@@ -109,6 +114,9 @@ pub fn run_repl<R: BufRead, W: Write>(
             "5" | "show" | "s" => handle_show_password(reader, writer, &mut password_store),
             "6" | "update" | "u" => {
                 handle_update_master_password(writer, prompt_password, &mut password_store)
+            }
+            "7" | "copy" | "c" => {
+                handle_copy_password(reader, writer, prompt_password, &mut password_store);
             }
             _ => break,
         }
@@ -239,6 +247,21 @@ fn handle_update_master_password<W: Write>(
             Some(MessageType::Error),
         );
     });
+}
+
+fn handle_copy_password<R: BufRead, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    prompt_password: &dyn PromptPassword,
+    password_store: &mut PasswordStore,
+) {
+    let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
+    let username =
+        read_terminal_input(reader, writer, Some("Please enter the username (Optional)"));
+    let username = Option::from(username).filter(|s| !s.is_empty());
+    if copy_password(writer, password_store, service, username).is_err() {
+        print(writer, "Password not found", None);
+    }
 }
 
 #[cfg(test)]
