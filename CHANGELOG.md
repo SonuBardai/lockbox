@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - 
 
 ### Added
-- 
+- Copy subcommand. [Issue](https://github.com/SonuBardai/lockbox/issues/91)
 
 ### Changed
 - 
