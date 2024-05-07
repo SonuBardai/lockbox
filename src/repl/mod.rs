@@ -116,7 +116,7 @@ pub fn run_repl<R: BufRead, W: Write>(
                 handle_update_master_password(writer, prompt_password, &mut password_store)
             }
             "7" | "copy" | "c" => {
-                handle_copy_password(reader, writer, prompt_password, &mut password_store);
+                handle_copy_password(reader, writer, &mut password_store);
             }
             _ => break,
         }
@@ -252,7 +252,6 @@ fn handle_update_master_password<W: Write>(
 fn handle_copy_password<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
-    prompt_password: &dyn PromptPassword,
     password_store: &mut PasswordStore,
 ) {
     let service = read_terminal_input(reader, writer, Some("Please enter the service name"));
