@@ -300,6 +300,25 @@ pub enum Command {
         master: Option<String>,
     },
 
+    Copy {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        file_name: String,
+        #[clap(
+            short,
+            long,
+            help = "The name of the service for which you are showing a password."
+        )]
+        service: String,
+        #[clap(short, long, aliases=&["user"], help="The username associated with the password you want to show. [Optional]")]
+        username: Option<String>,
+        #[clap(
+            short,
+            long,
+            help = "The master password used to decrypt the password store."
+        )]
+        master: Option<String>,
+    },
+
     #[clap(
         about = "Update the master password",
         long_about = "Update the master password used to encrypt and decrypt the password store"
