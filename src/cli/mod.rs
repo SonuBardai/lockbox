@@ -5,8 +5,8 @@ pub mod io;
 use self::{
     args::{get_password_store_path, Args, Command, DEFAULT_PASSWORD_FILENAME},
     commands::{
-        add_password, copy_password, generate_password, list_passwords, remove_password,
-        show_password, update_master_password,
+        add_password, combine_password_stores, copy_password, generate_password, list_passwords,
+        remove_password, show_password, update_master_password,
     },
     io::{print, read_hidden_input, MessageType, PromptPassword},
 };
@@ -275,6 +275,45 @@ pub fn run_cli<R: BufRead, W: Write>(
             });
         }
         Command::Repl { file_name } => repl(reader, writer, prompt_password, file_name),
+        Command::Combine {
+            file_name_1,
+            file_name_2,
+        } => {
+            let file_path_1 = get_password_store_path(file_name_1)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            let file_path_2 = get_password_store_path(file_name_2)
+                .unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
+            if (!file_path_1.exists() && !file_path_2.exists()) || file_path_1 == file_path_2 {
+                print(
+                    writer,
+                    "Error: Both password stores need to be different",
+                    Some(MessageType::Error),
+                );
+                return;
+            }
+            let mut password_store_1 = match PasswordStore::new(file_path_1, "".to_string()) {
+                Ok(password_store) => password_store,
+                Err(err) => {
+                    print(writer, &format!("Error: {}", err), None);
+                    return;
+                }
+            };
+            let mut password_store_2 = match PasswordStore::new(file_path_2, "".to_string()) {
+                Ok(password_store) => password_store,
+                Err(err) => {
+                    print(writer, &format!("Error: {}", err), None);
+                    return;
+                }
+            };
+            combine_password_stores(writer, &mut password_store_1, &mut password_store_2)
+                .unwrap_or_else(|err| {
+                    print(
+                        writer,
+                        &format!("Failed to combine password stores: {err}"),
+                        Some(MessageType::Error),
+                    );
+                });
+        }
     }
 }
 

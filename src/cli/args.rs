@@ -348,6 +348,18 @@ pub enum Command {
         #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
         file_name: String,
     },
+
+    // command to combine password stores. args: file_name_1 and file_name_2
+    #[clap(
+        about = "Combine two password stores",
+        long_about = "Combine two password stores into one. The two password stores will be encrypted with the same master password."
+    )]
+    Combine {
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        file_name_1: String,
+        #[clap(short, long, default_value_t=DEFAULT_PASSWORD_FILENAME.to_string(), help="The name of the password file to use. [default: passwords]")]
+        file_name_2: String,
+    },
 }
 
 #[cfg(test)]

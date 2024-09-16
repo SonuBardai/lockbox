@@ -197,6 +197,20 @@ pub fn copy_password<W: Write>(
     Ok(())
 }
 
+pub fn combine_password_stores<W: Write>(
+    writer: &mut W,
+    password_store1: &mut PasswordStore,
+    password_store2: &mut PasswordStore,
+) -> anyhow::Result<()> {
+    let password_store1 = password_store1.load()?;
+    let password_store2 = password_store2.load()?;
+    password_store1
+        .load()?
+        .combine(password_store2.load()?)
+        .dump()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use crate::{cli::io::MockPromptPassword, pass::PasswordEntry};

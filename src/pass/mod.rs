@@ -118,6 +118,10 @@ impl Passwords {
             print(writer, "No passwords found!", Some(MessageType::Warning));
         }
     }
+
+    pub fn combine(&mut self, other: Passwords) {
+        self.0.extend(other.0);
+    }
 }
 
 #[cfg(test)]
