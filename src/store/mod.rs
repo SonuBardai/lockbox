@@ -120,6 +120,14 @@ impl PasswordStore {
         self.master_password = new_master_password;
         self
     }
+
+    pub fn combine(&mut self, other: &mut PasswordStore) -> &mut Self {
+        self.passwords
+            .as_mut()
+            .unwrap()
+            .combine(other.passwords.as_mut().unwrap());
+        self
+    }
 }
 
 #[cfg(test)]
