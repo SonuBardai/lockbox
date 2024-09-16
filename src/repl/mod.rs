@@ -10,6 +10,7 @@ use crate::{
             read_terminal_input, MessageType, PromptPassword,
         },
     },
+    config::LockboxConfig,
     store::PasswordStore,
 };
 use passwords::PasswordGenerator;
@@ -22,9 +23,10 @@ pub fn repl<R: BufRead, W: Write>(
     reader: &mut R,
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
-    file_name: String,
+    config: LockboxConfig,
 ) {
     print(writer, &bold("Welcome to L🦀CKBOX!\n"), None);
+    let file_name = config.store_path;
     let file_path =
         get_password_store_path(file_name).unwrap_or(PathBuf::from(DEFAULT_PASSWORD_FILENAME));
     let master = if !file_path.exists() {

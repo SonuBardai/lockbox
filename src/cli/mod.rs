@@ -10,7 +10,7 @@ use self::{
     },
     io::{print, read_hidden_input, MessageType, PromptPassword},
 };
-use crate::{repl::repl, store::PasswordStore};
+use crate::{config::LockboxConfig, repl::repl, store::PasswordStore};
 use passwords::PasswordGenerator;
 use std::{
     io::{BufRead, Write},
@@ -22,6 +22,7 @@ pub fn run_cli<R: BufRead, W: Write>(
     writer: &mut W,
     prompt_password: &dyn PromptPassword,
     args: Args,
+    config: LockboxConfig,
 ) {
     match args.command {
         Command::Add {
@@ -274,7 +275,7 @@ pub fn run_cli<R: BufRead, W: Write>(
                 );
             });
         }
-        Command::Repl { file_name } => repl(reader, writer, prompt_password, file_name),
+        Command::Repl { file_name } => repl(reader, writer, prompt_password, config),
     }
 }
 
